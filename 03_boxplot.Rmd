@@ -1,0 +1,98 @@
+---
+title: "Base R  Boxplot"
+author: "李雄辉"
+date: "2017/5/22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## References
+
+https://en.wikipedia.org/wiki/Box_plot
+http://www.statmethods.net/graphs/boxplot.html
+https://sanwen8.cn/p/202QpcH.html
+http://us.findeen.com/videos/comparing_box_plots_with_outliers.html
+
+## Description
+
+箱线图（Boxplot）也称盒须图（Box-whisker Plot），是利用数据中的五个统计量：最小值、第一四分位数、中位数、第三四分位数与最大值来描述数据的一种方法，它也可以粗略地看出数据是否具有有对称性，分布的分散程度等信息，特别可以用于对几个样本的比较。
+
+箱线图（Box Plot或Box-and-Whisker Plot）主要是从四分位数的角度出发描述数据的分布，它通过最大值（Q4） 、上四分位数（Q3） 、中位数（Q2） 下四分位数（Q1）和最小值（Q0）五处位置来获取一维数据的分布概况。我们知道，这五处位置之间依次包含了四段数据，每段数据量均为总数据量的1/4。通过每一段数据占据的长度，我们可以大致推断出数据的集中或离散趋势（长度越短，说明数据在该区间上越密集，反之则稀疏） 。
+
+它可以粗略地看出数据是否具有有对称性，分布的分散程度等信息，特别可以用于对几个样本的比较。
+
+```{r cars}
+summary(cars)
+```
+
+## 单变量箱线图
+
+boxplot()是一个泛型函数，所以它可以适应不同的参数类型。
+
+目前它支持两种参数类型：公式（formula）和数值向量（单变量），后者对我们来说可能更容易理解（给一批数据、作相应的箱线图）。
+
+
+
+```{r, eval=FALSE}
+boxplot(x, ...)
+```
+
+
+```{r}
+set.seed(19)
+
+x <- rnorm(11)
+
+sort(x)
+
+min(x)
+
+
+mean
+```
+
+## Arguments
+
+x：为一个数值向量或者列表或者数据框，若为列表则对列表中每一个子对象依次作出箱线图
+
+range：是一个延伸倍数，决定了箱线图的末端（须）延伸到什么位置，这主要是考虑到离群点的原因，在数据中存在离群点的情况下，将箱线图末端直接延伸到最大值和最小值对描述数据分布来说并不合适（图形缺乏稳健性），所以R中的箱线图默认只将图形延伸到离箱子两端range × (Q3 − Q1)处，即上下四分位数分别加/减内四分位距（Interquartile Range，简称IQR ≡ Q3 − Q1）的倍数，超过这个范围的数据点就被视作离群点，在图中直接以点的形式表示出来。
+
+width：给定箱子的宽度。
+
+varwidth：逻辑值，若为TRUE，那么箱子的宽度与样本量的平方根成比例，这在多批数据同时画多个箱线图时比较有用，能进一步反映出样本量的大小。
+
+notch：是一个有用的逻辑参数，它决定了是否在箱子上画凹槽，凹槽所表示的实际上是中位数的一个区间估计，其计算式为Q2 + / − 1.58IQR/√n 区间置信水平为95%，在比较两组数据中位数差异时，我们只需要观察箱线图的凹槽是否有重叠部分，若两个凹槽互不交叠，那么说明这两组数据的中位数有显著差异（P值小于0.05）。
+
+horizontal：逻辑值，设定箱线图是否水平放置。
+
+add：设置是否将箱线图添加到现有图形上。
+
+```{r}
+# Boxplot of MPG by Car Cylinders 
+boxplot(mpg~cyl,data=mtcars, main="Car Milage Data", 
+  	xlab="Number of Cylinders", ylab="Miles Per Gallon")
+```
+
+
+
+```{r}
+# Boxplot of MPG by Car Cylinders 
+boxplot(mpg~cyl,data=mtcars, main="Car Milage Data", 
+  	xlab="Number of Cylinders", ylab="Miles Per Gallon")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+```{r}
+# Notched Boxplot of Tooth Growth Against 2 Crossed Factors
+# boxes colored for ease of interpretation 
+boxplot(len~supp*dose, data=ToothGrowth, notch=TRUE, 
+  col=(c("gold","darkgreen")),
+  main="Tooth Growth", xlab="Suppliment and Dose")
+```

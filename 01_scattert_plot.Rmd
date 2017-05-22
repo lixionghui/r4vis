@@ -1,0 +1,146 @@
+---
+title: "Base R scatter plot"
+author: "李雄辉"
+date: "2017/5/10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(highlight = TRUE)
+```
+
+## 散点图及其作用
+
+
+- 散点图又称散点分布图
+
+- 以一个变量为横坐标，另一变量为纵坐标（笛卡尔坐标系，两个数值型变量）
+
+- 利用散点（坐标点）的分布形态反映变量统计关系（探索变量间的关系）
+
+- 可以展示数据的分布和聚合情况
+
+## 基础包中散点图的绘制函数 plot()
+
+
+```{r, message=FALSE, warning=FALSE}
+
+library(graphics) # 已经默认加载了，这里不需要重新加载
+
+data("women")  # 载入 women 数据集
+
+plot(x = women$height, y = women$weight)
+
+# 通常来说，函数的第一个参数都是对象，不需要把名称写出来、
+# 这里第二个参数 y 和  x 一样，也不需要写出来
+plot(women$height, women$weight)  
+
+height <- women$height
+
+weight <- women$weight
+
+
+plot(height, weight) 
+
+
+plot(cars$dist~cars$speed) # 公式
+
+plot(mpg~disp, data = mtcars) # data 参数 , 类似于 attach() ，可以直接用数据框的变量名，而不用指定 $ 
+```
+
+
+## 图形类型
+
+```{r, message=FALSE, warning=FALSE}
+
+plot(women$height, women$weight, type = "p")  # point，点图，散点图，默认值
+plot(women$height, women$weight, type = "l")  # line,  线图，
+plot(women$height, women$weight, type = "b")  # both, 点线图
+plot(women$height, women$weight, type = "c")  
+plot(women$height, women$weight, type = "o")  # 在图形中数据点覆盖在线上
+plot(women$height, women$weight, type = "h")  # 在图形中数据显示为从点到x轴的垂直线
+plot(women$height, women$weight, type = "s")  # 在图形中数据显示为阶梯图
+plot(women$height, women$weight, type = "S")
+plot(women$height, women$weight, type = "n")  # 在图形中数据不显示
+
+```
+
+## 其他用法
+
+```{r, message=FALSE, warning=FALSE}
+
+plot(women$height, women$weight, main = "Title")   # 标题
+plot(women$height, women$weight, main = "Title", sub = "Subtitle")    # 副标题
+plot(women$height, women$weight, main = "Title", sub = "Subtitle", xlab = "Height (in)", ylab = "Weight (lbs)
+") # 横轴、纵轴显示标签
+plot(women$height, women$weight
+     , main = "Title"
+     , sub = "Subtitle"
+     , xlab = "Height" 
+     , ylab = "Weight"
+     , asp = 0.5         # the y/x aspect ratio
+     ) 
+
+
+plot(women$height, women$weight
+     , main = "Title"
+     , sub = "Subtitle"
+     , xlab = "Height()" 
+     , ylab = "Weight"
+     , asp = 3         # 很少用
+     ) 
+```
+
+
+## 点的样式 plotting character 
+
+```{r}
+help(pch) # pch 参数的用法
+
+plot(mtcars$disp, mtcars$mpg, pch = 0)
+plot(mtcars$disp, mtcars$mpg, pch = 1)
+plot(mtcars$disp, mtcars$mpg, pch = 2)
+plot(mtcars$disp, mtcars$mpg, pch = 3)
+plot(mtcars$disp, mtcars$mpg, pch = 4)
+plot(mtcars$disp, mtcars$mpg, pch = 5)
+plot(mtcars$disp, mtcars$mpg, pch = 6)
+plot(mtcars$disp, mtcars$mpg, pch = 7)
+plot(mtcars$disp, mtcars$mpg, pch = 8)
+plot(mtcars$disp, mtcars$mpg, pch = 9)
+plot(mtcars$disp, mtcars$mpg, pch = 10)
+plot(mtcars$disp, mtcars$mpg, pch = 11)
+plot(mtcars$disp, mtcars$mpg, pch = 12)
+plot(mtcars$disp, mtcars$mpg, pch = 13)
+plot(mtcars$disp, mtcars$mpg, pch = 14)
+plot(mtcars$disp, mtcars$mpg, pch = 15)
+plot(mtcars$disp, mtcars$mpg, pch = 16)
+plot(mtcars$disp, mtcars$mpg, pch = 17)
+plot(mtcars$disp, mtcars$mpg, pch = 18)
+plot(mtcars$disp, mtcars$mpg, pch = 19)
+plot(mtcars$disp, mtcars$mpg, pch = 20)
+plot(mtcars$disp, mtcars$mpg, pch = 21)
+plot(mtcars$disp, mtcars$mpg, pch = 22)
+plot(mtcars$disp, mtcars$mpg, pch = 23)
+plot(mtcars$disp, mtcars$mpg, pch = 24)
+plot(mtcars$disp, mtcars$mpg, pch = 25)
+plot(mtcars$disp, mtcars$mpg, pch = 26) #目前没有实现pch '26'这样一个值
+```
+
+## 其他参数 … 
+
+```{r}
+# 当pch取 0~14时，其点为空心点，可以用 col 参数设置其边框的颜色
+# 当pch取15~20时，其点是实心点，可以用 bg  参数设置其填充的颜色
+# 当pch取21~25时，其点也是实心点，既可以用 col 参数设置边框的颜色，也可以用 bg 参数设置其内部的填充颜色　
+plot(mtcars$disp, mtcars$mpg, pch = 12, col = "blue")
+plot(mtcars$disp, mtcars$mpg, pch = 23, bg  = "blue")
+plot(mtcars$disp, mtcars$mpg, pch = 23, col = "red", bg  = "blue")
+```
+
+## 多变量散点图
+```{r}
+head(iris)
+
+plot(iris[,1:4])
+```
