@@ -10,14 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-## References
-
-https://en.wikipedia.org/wiki/Box_plot
-http://www.statmethods.net/graphs/boxplot.html
-https://sanwen8.cn/p/202QpcH.html
-http://us.findeen.com/videos/comparing_box_plots_with_outliers.html
-
-## Description
+## 简介
 
 箱线图（Boxplot）也称盒须图（Box-whisker Plot），是利用数据中的五个统计量：最小值、第一四分位数、中位数、第三四分位数与最大值来描述数据的一种方法，它也可以粗略地看出数据是否具有有对称性，分布的分散程度等信息，特别可以用于对几个样本的比较。
 
@@ -25,37 +18,88 @@ http://us.findeen.com/videos/comparing_box_plots_with_outliers.html
 
 它可以粗略地看出数据是否具有有对称性，分布的分散程度等信息，特别可以用于对几个样本的比较。
 
-```{r cars}
-summary(cars)
-```
 
-## 单变量箱线图
-
-boxplot()是一个泛型函数，所以它可以适应不同的参数类型。
-
-目前它支持两种参数类型：公式（formula）和数值向量（单变量），后者对我们来说可能更容易理解（给一批数据、作相应的箱线图）。
-
-
-
-```{r, eval=FALSE}
-boxplot(x, ...)
-```
+## 箱线图是对五数概括的可视化
 
 
 ```{r}
+# R code fragments used in talk
+# Boxplots and Outliers
+# Kansas City R Users Group - Beginner's Workshop
+# Earl F Glynn, 4 Oct 2014
+
 set.seed(19)
 
 x <- rnorm(11)
-
+x
 sort(x)
 
 min(x)
+mean(sort(x)[3:4])
+median(x)
+mean(sort(x)[8:9])
+max(x)
 
+quantile(x, probs=seq(0,1,0.25))
+fivenum(x)
 
-mean
+sort(x)
+
+fivenum(x)
+
+boxplot(x, col="skyblue", main="Boxplot")
+boxplot.stats(x)
 ```
 
-## Arguments
+## 带异常点的箱线图
+
+```{r}
+x[3] <- 20  # Introduce outlier
+sort(x)
+fivenum(x)  # Shows new max
+boxplot(x, col="skyblue", main="Boxplot with Outlier")
+boxplot.stats(x)
+```
+
+
+## 稳健统计
+
+### 集中度：中位数 > 平均值
+
+Median is more “robust” measure of central tendency than mean.
+
+```{r}
+# Central tendency
+set.seed(19)
+x <- rnorm(11)
+x
+mean(x)
+median(x)
+
+x[3] <- 20  # Introduce outlier
+mean(x)
+median(x)
+```
+
+
+### 离散度：四分位距 > 标准差
+
+IQR is more “robust” measure of dispersion than standard deviation.
+
+```{r}
+# Dispersion
+set.seed(19)
+x <- rnorm(11)
+x
+sd(x)
+diff(boxplot.stats(x)$stats[c(2,4)])  # IQR
+
+x[3] <- 20  # Introduce outlier
+sd(x)
+diff(boxplot.stats(x)$stats[c(2,4)])  # IQR
+```
+
+
 
 x：为一个数值向量或者列表或者数据框，若为列表则对列表中每一个子对象依次作出箱线图
 
@@ -96,3 +140,11 @@ boxplot(len~supp*dose, data=ToothGrowth, notch=TRUE,
   col=(c("gold","darkgreen")),
   main="Tooth Growth", xlab="Suppliment and Dose")
 ```
+
+
+## 参考资料
+
+https://en.wikipedia.org/wiki/Box_plot
+http://www.statmethods.net/graphs/boxplot.html
+https://sanwen8.cn/p/202QpcH.html
+http://us.findeen.com/videos/comparing_box_plots_with_outliers.html
