@@ -1,0 +1,165 @@
+---
+title: "05_ggplot2_geom"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 复习：图层的基本语法
+
+```{r}
+# A graphing template
+# ggplot(data = <DATA>) + 
+#   <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))
+```
+
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  geom_line(mapping = aes(x = displ, y = hwy))
+
+# 更常用 ggplot 中的 mapping 作为默认的 mapping
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point() +
+  geom_line()
+```
+
+
+## Graphical Primitives
+
+关于 stat 和 geom 在知乎上的回答 
+https://www.zhihu.com/question/24779017
+
+### 空图形
+
+```{r}
+View(economics)
+
+a <- ggplot(data = economics, aes(x = date, y = unemploy))
+
+a + geom_blank()
+
+ggplot(data = economics) # 只是开启了一个画布
+```
+
+
+### 线图
+
+```{r}
+a <- ggplot(data = economics, aes(x = date, y = unemploy))
+
+a + geom_path()
+a + geom_line()
+a + geom_step()
+
+
+recent <- economics[economics$date > as.Date("2013-01-01"), ]
+
+ggplot(recent, aes(date, unemploy)) + geom_line()
+ggplot(recent, aes(date, unemploy)) + geom_step()
+
+
+m <- ggplot(economics, aes(unemploy/pop, psavert))
+
+m + geom_path()
+
+m + geom_line()
+```
+
+
+### 线+
+```{r}
+p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+
+p + geom_vline(xintercept = 5)
+
+p + geom_vline(xintercept = 1:5)
+
+p + geom_vline(xintercept = c(1.5, 2.1))
+
+p + geom_hline(yintercept = 20)
+
+
+p + geom_abline(intercept = 40, slope = -4.5)
+
+
+p + geom_smooth(method = "lm", se = FALSE)
+
+p + geom_smooth()
+
+```
+
+
+
+## One Variable
+
+```{r}
+c <- ggplot(data = mpg, aes(hwy))
+
+c + geom_density()
+
+c + geom_histogram()
+```
+
+
+
+```{r}
+ggplot(data = mpg, aes(cyl)) + geom_bar()
+
+ggplot(data = mpg, aes(factor(cyl))) + geom_bar()
+```
+
+
+
+
+## Two Variables
+
+### Continuous X, Continuous Y
+
+```{r}
+
+View(mtcars)
+
+p <- ggplot(mtcars, aes(wt, mpg, label = rownames(mtcars)))
+
+p + geom_text()
+
+p + geom_label()
+```
+
+
+```{r}
+p <- ggplot(mpg, aes(cyl, hwy))
+
+p + geom_point()
+
+p + geom_jitter()
+
+
+p <- ggplot(mpg, aes(class, hwy))
+p + geom_boxplot()
+p + geom_boxplot() + geom_jitter(width = 0.2)
+```
+
+
+### Discrete X, Continuous Y
+```{r}
+library(dplyr)
+
+mpg %>% 
+  group_by(cyl) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = factor(cyl), y = count)) + 
+  geom_col()
+
+df <- mpg %>% 
+  group_by(cyl) %>%
+  summarise(count = n())
+  
+ggplot(df, aes(x = cyl, y = count)) + geom_col()
+
+```
+

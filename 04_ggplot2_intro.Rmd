@@ -1,0 +1,161 @@
+---
+title: "04_ggplot2_intro"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 介绍
+
+ggplot2包是基于Wilkinson在《Grammar of Graphics》一书中所提出的图形语法的具体实现, 这套图形语法把绘图过程归纳为data, transformation, scale, coordinates, elements, guides, display等一系列独立的步骤, 通过将这些步骤搭配组合, 来实现个性化的统计绘图。于是, 得益于该图形语法, Hadley Wickham所开发的ggplot2是如此人性化, 不同于R基础绘图和先前的lattice那样参数满天飞, 而是摈弃了诸多繁琐细节, 并以人的思维进行高质量作图。在ggplot2包中, 加号的引入革命性的, 这个神奇的符号完成了一系列图形语法叠加, 也是这个符号, 让很多人喜欢上了用R来进行统计绘图。
+
+
+### 参考资料
+
+官方网站参考文档 <http://ggplot2.tidyverse.org/> 
+
+R4DS 中关于 Data Visualisation 的章节 <http://r4ds.had.co.nz/data-visualisation.html>
+
+Data Visualization with ggplot2 Cheat Sheet <https://www.rstudio.com/wp-content/uploads/2016/11/ggplot2-cheatsheet-2.1.pdf>
+
+作者： Hadley Wickham 
+
+ggplot2 在 R packages 中是一个璀璨的明星。
+
+### 核心理念
+
+* 绘图与数据分离，数据相关的绘图与数据无关的绘图分离
+* 按图层作图，有利于结构化思维
+
+
+### 图形语法
+
+在 Hadly 的 ggplot2 官方文档中，Hadely 这样对 Wilkinson 的图形语法进行了描述：
+
+> “一张统计图形就是从数据到几何对象（geometric object, 缩写为geom，包括点、线、条形等）的图形属性（aesthetic attributes,缩写为aes, 包括颜色、形状、大小等）的一个映射。此外，图形中还可能包含数据的统计变换（statistical transformation, 缩写为stat），最后绘制在某个特定的坐标系（coordinate system, 缩写为coord）中，而分面（facet, 指将绘图窗口划分为若干个子窗口）则可以用来生成数据中不同子集的图形。”
+
+因此，在ggplot2中，图形语法中至少包括了如下几个图形部件：
+
+1.数据（data)
+2.几何对象（geom）
+3.映射（mapping）
+4.统计变换（stat）
+5.位置（position）
+6.坐标系（coord）
+7.分面（facet）
+8.标度（scale）
+9.主题（theme）
+
+
+
+## 准备工作
+
+### 安装和载入
+
+```{r}
+# install.packages("ggplot2") # 安装 ggplot2
+library(ggplot2) # 载入 ggplot2
+
+# install.packages("tidyverse")
+# library(tidyverse)
+```
+
+## 基本语法
+
+
+### 数据集
+
+```{r}
+data(mpg)
+
+View(mpg)
+
+help(mpg)
+```
+
+
+base R plot
+
+散点图、直方图、箱线图
+
+### 散点图
+
+```{r}
+
+# qplot() 不要使用这个函数！！！！！
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+ggplot(data = mpg) + 
+  geom_line(mapping = aes(x = displ, y = hwy))
+
+plot(displ~hwy, data = mpg) # plot(mpg$displ, mpg$hwy)
+
+```
+
+
+## 美学属性映射 Aesthetic mappings
+
+```{r}
+
+str(mpg)
+
+# 颜色
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = factor(cyl)))
+
+# 大小
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = cty))
+
+# 形状
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = drv))
+
+
+p <- ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = drv))
+
+summary(p)
+
+```
+
+
+## 直方图
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(mapping = aes(x = carat))
+
+
+hist(diamonds$carat)
+```
+
+
+
+## 箱线图
+
+```{r}
+
+ggplot(data = mpg) + 
+  geom_boxplot(mapping =  aes(x = "hwy", y = hwy))
+
+boxplot(mpg$hwy)
+
+# 分组
+ggplot(data = mpg) + 
+  geom_boxplot(mapping =  aes(x = class, y = hwy))
+
+boxplot(hwy~class, data = mpg)
+
+
+```
+
+
+
+
+
+
+
