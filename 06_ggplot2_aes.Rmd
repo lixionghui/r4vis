@@ -1,0 +1,314 @@
+---
+title: "Aesthetic mappings 属性映射"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### 参考资料
+
+官方网站参考文档 <http://ggplot2.tidyverse.org/> 
+
+R4DS 中关于 Data Visualisation 的章节 <http://r4ds.had.co.nz/data-visualisation.html>
+
+Data Visualization with ggplot2 Cheat Sheet <https://www.rstudio.com/wp-content/uploads/2016/11/ggplot2-cheatsheet-2.1.pdf>
+
+
+## geom 复习
+
+### Pie chart (饼图)
+
+`ggplot2` 中没有 `geom_pie` 的几何图形。
+
+饼图是极坐标系下(`coord_polar`)的一种图形，等价于笛卡尔坐标系下条形图在极坐标系下的变换。
+
+> A pie chart = stacked bar chart + polar coordinates
+
+在使用极坐标系做图时需要非常小心，不太好理解也不好掌握。
+
+简单的饼图，不推荐初学者使用 `ggplot2` 来作图。
+
+`ggplot2` 复杂的饼图（环形图）的一个例子  <https://github.com/halhen/viz-pub/tree/master/sports-season>
+
+#### Basic plot : Pie chart
+
+以下是所使用 `pie()` 函数的参数说明：
+
+* x - 是包含在饼图中使用的数值的矢量。
+* labels - 用于给出切片的描述。
+* radius - 指示饼图的圆的半径。（-1和+1之间的值）。
+* main - 指示图表的标题。
+* col - 指示调色板。
+* clockwise - 是一个逻辑值指示该切片绘制顺时针或逆时针方向
+
+
+```{r}
+# Create data for the graph.
+x <- c(21, 62, 10, 53)
+labels <- c("London", "New York", "Singapore", "Mumbai")
+
+# Plot the chart.
+pie(x,labels)
+
+
+piepercent<- round(100*x/sum(x), 1)
+
+pie(x, labels=piepercent, main="City pie chart",col=rainbow(length(x)))
+legend("topright", c("London","New York","Singapore","Mumbai"), cex=0.8, fill=rainbow(length(x)))
+```
+
+#### Bubble chart (气泡图)
+
+`ggplot2` 中没有 `geom_bubble` 的几何图形。
+
+气泡图 = 散点图 + 大小映射
+
+> geom_point(aes(size = z))
+
+## Aesthetic mappings
+
+参考：Aesthetic specifications <http://ggplot2.tidyverse.org/articles/ggplot2-specs.html>
+
+### Colour related aesthetics: colour, fill and alpha
+
+#### colour 颜色
+
+```{r}
+View(iris)
+str(iris)
+
+# 鸢尾花数据集，三种类别（setosa, versicolour 和 virginica )，每种类别50个样本。
+
+# 特征：萼片长度、萼片宽度、花瓣长度、花瓣宽度。
+
+library(ggplot2)
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point()
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(color = "blue")
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(color = "#7c916f")
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point()
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(aes(color = Species))
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(mapping = aes(color = Species))
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(mapping = aes(colour = Species))
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point() + 
+  scale_color_manual(values = c("blue", "red", "green")) 
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(aes(color = Species)) + 
+  scale_colour_manual(values = c("blue", "red", "green")) 
+
+
+# 放在 mappping(aes) 内部的属性会做映射
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, color = "blue")) +
+  geom_point()
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(aes(color = "blue"))
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(color = "blue")
+
+# 单独指定颜色要放在 mappping(aes) 之外
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(color = "blue")
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, color = c("blue", "red", "green"))) +
+  geom_point()
+```
+
+#### fill 填充(颜色)
+
+```{r}
+View(mtcars)
+
+c <- ggplot(mtcars, aes(factor(cyl)))
+
+c + geom_bar()
+
+c + geom_bar(fill = "red")
+
+c + geom_bar(colour = "red") # color 边框颜色
+
+c + geom_bar(fill = "white", colour = "red")
+```
+
+```{r}
+# 分组映射
+k <- ggplot(mtcars, aes(factor(cyl), fill = factor(vs)))
+k + geom_bar()
+
+# position 位置调整 : 图层的三要素：geom, stat, position
+
+# geom_bar(stat = "count") 等价于 stat_count(geom = "bar")
+
+k + geom_bar(position = "stack")   # 堆叠，默认
+k + geom_bar(position = "fill")    
+k + geom_bar(position = "dodge")   # 并列
+k + geom_bar(position = "identity", alpha = 0.3)
+
+# geom_area() 中 position 也是比较常用的
+```
+
+#### alpha (颜色)透明度
+
+
+```{r}
+View(diamonds)
+str(diamonds)
+# carat:克拉重量
+# cut:切工
+# color:颜色
+# clarity:净度
+# depth:深度
+# table:钻石宽度
+# 以及X，Y, Z
+
+d <- ggplot(data = diamonds, aes(carat, price))
+
+d + geom_point() # overploting
+d + geom_point(alpha = 0.5)
+d + geom_point(alpha = 1/10)
+
+```
+
+### Differentiation related aesthetics: linetype, size, shape
+
+#### Size 大小
+
+```{r}
+p <- ggplot(mtcars, aes(wt, mpg))
+
+# Should be specified with a numerical value (in millimetres), 
+# or from a variable source
+p + geom_point()
+p + geom_point(size = 4)
+p + geom_point(size = 3)
+p + geom_point(size = 2)
+p + geom_point(size = 1)
+
+p + geom_point(size = 1.5) 
+```
+
+##### Bubble chart 
+
+```{r}
+p <- ggplot(mtcars, aes(wt, mpg))
+
+p + geom_point()
+p + geom_point(aes(size = qsec))
+```
+
+
+### Linetype and shape 线型和形状
+
+对于属性映射通常优先选择颜色类，但在纸质出版物上，彩色在打印后只能输出黑白灰，分组见的区分度不够。
+
+形状类在纸质出版物上能保持原有的区分度，只一个属性映射的重要补充。
+
+#### Linetype
+
+参考《Cookbook for R Graphs Shapes and line types》 <http://www.cookbook-r.com/Graphs/Shapes_and_line_types/>
+
+![Linetype](http://www.cookbook-r.com/Graphs/Shapes_and_line_types/figure/line_types-1.png)
+
+
+linetype 可以用数字编号指定，也可以使用别称，默认为 1 ("solid") 实心线。
+
+An integer or name: 0 = blank, 1 = solid, 2 = dashed, 3 = dotted, 4 = dotdash, 5 = longdash, 6 = twodash,
+
+```{r}
+p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+
+p # 散点图
+
+# 用 x 和 y 的均值将其划分为四个象限，不指定 linetype，使用默认值
+p + geom_vline(xintercept = mean(mtcars$wt)) + geom_hline(yintercept = mean(mtcars$mpg)) 
+
+# 垂直线用数字编号指定线型，水平线用别名指定线型
+p + geom_vline(xintercept = mean(mtcars$wt), linetype = 2) + geom_hline(yintercept = mean(mtcars$mpg), linetype = "solid")
+
+# 对划分的线加上颜色突出
+p + geom_vline(xintercept = mean(mtcars$wt),  linetype = "longdash", color = "blue") + 
+    geom_hline(yintercept = mean(mtcars$mpg), linetype = "longdash", color = "blue")
+```
+
+
+```{r}
+# 分组映射
+
+# Mapping line type from a variable
+ggplot(economics_long, aes(date, value01)) +
+  geom_line(aes(linetype = variable))
+```
+
+
+#### (Point) Shape 形状
+
+参考《Cookbook for R Graphs Shapes and line types》 <http://www.cookbook-r.com/Graphs/Shapes_and_line_types/>
+
+![Shape](http://www.cookbook-r.com/Graphs/Shapes_and_line_types/figure/unnamed-chunk-2-1.png)
+
+
+```{r}
+p <- ggplot(mtcars, aes(wt, mpg))
+
+p + geom_point()
+
+p + geom_point(shape = 0)
+p + geom_point(shape = 1)
+p + geom_point(shape = 2)
+
+p + geom_point(shape = 16)
+p + geom_point(shape = 20)
+p + geom_point(shape = 21)
+p + geom_point(shape = "o")
+p + geom_point(shape = "O")
+p + geom_point(shape = "0")
+p + geom_point(shape = "+")
+p + geom_point(shape = "%")
+
+p + geom_point(shape = "x")
+p + geom_point(shape = "y")
+p + geom_point(shape = "z")
+p + geom_point(shape = "w")
+p + geom_point(shape = "H")
+p + geom_point(shape = "WHO")
+```
+
+```{r}
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, shape = Species)) +
+  geom_point()
+```
+
+
+### Position related aesthetics: x, y, xmin, xmax, ymin, ymax, xend, yend
+
+这些位置相关的属性，通常是 geom 必填的参数，并非用来分组映射的，这里不细讲。
+
+### Aesthetics: grouping
+
+这里的分组是用来做计算，和分组映射不太一样，放到下节课程中再讲。
+
+
+## 回顾
+
+* 属性
+* 分组属性映射
+* Position （堆叠等）
