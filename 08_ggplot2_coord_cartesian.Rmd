@@ -1,0 +1,174 @@
+---
+title: "Cartesian coordinate system 笛卡尔坐标系"
+author: "lixionghui@gmail.com"
+date: "2017/8/20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 参考文档
+
+官方网站在线参考文档 <http://ggplot2.tidyverse.org/reference/index.html#section-coordinate-systems> 
+
+## 数据集
+
+`gapminder` 数据集包含了142个国家/地区从1952年到2007年每隔5年的国民生产总值(GDP)、人口(population)和预期寿命/人均寿命(life expectancy)等信息，总共6个变量，1704行记录。
+
+`gapminder` 数据集通常用来研究经济发展与人均寿命的关系。
+
+详情参考数据参来源`Gapminder项目` <http://www.gapminder.org/data/> 。
+
+```{r}
+library(gapminder) # 如果没有这个包则直接 install.packages("gapminder")
+View(gapminder)    # 在RStudio的数据面板中查看数据集
+str(gapminder)     # 查看数据结构
+help(gapminder)    # 查看数据集说明
+```
+
+数据集变量说明：
+* country   ：国家/地区；因子类型，总共142个水平；英文描述
+* continent ：大洲；因子类型，总共5个水平；英文描述，分别是 Africa(非洲), Americas(美洲), Asia(亚洲), Europe(欧洲), Oceania(大洋洲)
+* year      ：统计年份；每隔5年统计一次；连续型变量；整数型；开始时间是1952年，最后的时间是2007年
+* lifeExp   ：人均寿命；连续型变量；数值型；单位是`年`
+* pop       ：人口数；连续型变量；数值型
+* gdpPercap ：人均GDP；连续型变量；数值型；单位是`美元`
+
+
+## Cartesian coordinate system
+
+英文维基百科条目 <https://en.wikipedia.org/wiki/Cartesian_coordinate_system>
+
+笛卡尔坐标系，也称直角坐标系，是一种正交坐标系。
+
+`笛卡尔坐标系` 是 `ggplot2` 默认坐标系统。
+
+在觉得大多数情况下都不需要对`笛卡尔坐标系`做调整，只在部分特殊情况下才可能做一些改变，通过`coord_cartesian()`函数，它有三个参数：
+
+* xlim = NULL   ：横轴的起止限制，一个数值向量，包含开始和结束两个数值，定义坐标的起和止，比如 c(10,100)
+* ylim = NULL   ：纵轴的起止限制, 一个数值向量，包含开始和结束两个数值，定义坐标的起和止，比如 c(10,100)
+* expand = TRUE ：是否向两边做适当的扩展
+
+### expand
+
+先看 `expand` 两个值 `TRUE`(默认) 和 `FALSE` 的区别
+
+```{r}
+p <- gapminder %>%
+  filter(country == "China") %>%
+  ggplot(aes(x = gdpPercap, lifeExp)) +
+  geom_point() +
+  geom_line()
+
+p # 等价于 print(p)
+
+p + coord_cartesian(expand = TRUE)  # expand 默认就是 TRUE，故而参数可以不写，这里只是用来做对比
+
+p + coord_cartesian(expand = FALSE) # 不做扩展的结果就是左下角和右上角的数据点与坐标轴的边界太近，不美观
+```
+
+默认适当扩展的方式表现会更友好。
+
+
+
+### xlim & ylim 
+
+`coord_cartesian` 中的 参数 `xlim` 和 `ylim` 是用来限制坐标轴的显示范围。
+
+比较 `scale_x_continuous` / `scale_y_continuous` 中的 `limits` ：
+
+```{r cars}
+p <- gapminder %>%
+  filter(country == "China") %>%
+  ggplot(aes(x = gdpPercap, lifeExp)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+p # 等价于 print(p)
+
+p + scale_x_continuous(limits = c(500, 3000))  # scale_ 中的 limits 是先多数据作过滤，再做统计变换(线性回归)
+
+p + coord_cartesian(xlim = c(500, 3000))       # coord_ 中的 xlim / ylim 不过滤数据，只是对指定区域放大
+```
+
+所以正确的局部放大的方式是`coord_cartesian` 中的 参数 `xlim` 和 `ylim`。
+
+### xlim & ylim + expand
+
+返回之前在来看 `expand` 参数，在结合 `xlim`/`ylim` 是  `expand = FALSE` 还是有用的。
+
+```{r}
+p <- gapminder %>%
+  filter(country == "China") %>%
+  ggplot(aes(x = gdpPercap, lifeExp)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+p # 等价于 print(p)
+
+p + coord_cartesian(xlim = c(500, 3000), expand = TRUE)  # 500 和 3000 之外的附近有数据点被包含进来，容易让人产生疑问
+
+p + coord_cartesian(xlim = c(500, 3000), expand = FALSE) # 不扩展显示则不会包含预设范围之外的数据点，不会有疑问产生
+```
+
+
+### limits 参数， xlim() 和 ylim() 函数
+
+`scale_x_continuous` / `scale_y_continuous` 中的 `limits` 参数，有对应的**快捷函数** `xlim()` 和 `ylim()`，他们之间是等价的。
+
+
+```{r}
+p <- gapminder %>%
+  filter(country == "China") %>%
+  ggplot(aes(x = gdpPercap, lifeExp)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+p # 等价于 print(p)
+
+p + scale_x_continuous(limits = c(500, 3000)) 
+
+p + xlim(c(500, 3000))  # xlim() 是 scale_x_continuous(limits) 的快捷函数，两者等价
+```
+
+
+另外, `scale_x_continuous` / `scale_y_continuous` 中的 `limits` 参数，其作用既然是对先对数据点进行过滤，则可以在数据集传递给 `ggplot` 之前数据处理做好过滤，使用 `dplyr` 中的 `filter()`。
+
+```{r}
+gapminder %>%
+  filter(country == "China") %>%
+  ggplot(aes(x = gdpPercap, lifeExp)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  scale_x_continuous(limits = c(500, 3000))
+
+# 另一个实现方式：先对数据集过滤，再传递给 ggplot
+gapminder %>%
+  filter(country == "China") %>%
+  filter(between(gdpPercap, 500, 3000)) %>%
+  ggplot(aes(x = gdpPercap, lifeExp)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+
+## 总结
+
+需要对 `笛卡尔坐标系`做调整时使用的函数是
+
+> coord_cartesian(xlim = NULL, ylim = NULL, expand = TRUE)
+
+* `xlim` 和 `ylim` 参数是用来缩放绘图结果(图层)区域的；需要与 `xlim()` 和 `ylim()` 函数区分开，后者是先对数据做过滤再绘图。
+* `expand` 参数主要与 `xlim` 和 `ylim` 配合使用，使其不包含外部附近的数据点。
+
+
+
+
+
+
+
+
+
