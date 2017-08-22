@@ -1,0 +1,355 @@
+---
+title: 'Aesthetic mappings: group 分组映射'
+author: "lixionghui"
+date: "2017/8/19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 参考文档
+
+官方网站在线参考文档 <http://ggplot2.tidyverse.org/> 
+
+## 数据集
+
+`gapminder` 数据集包含了142个国家/地区从1952年到2007年每隔5年的国民生产总值(GDP)、人口(population)和预期寿命/人均寿命(life expectancy)等信息，总共6个变量，1704行记录。
+
+`gapminder` 数据集通常用来研究经济发展与人均寿命的关系。
+
+更进一步的信息可以参考`Gapminder项目` <http://www.gapminder.org/> 。
+
+数据集变量说明：
+* country   ：国家/地区；因子类型，总共142个水平；英文描述
+* continent ：大洲；因子类型，总共5个水平；英文描述，分别是 Africa(非洲), Americas(美洲), Asia(亚洲), Europe(欧洲), Oceania(大洋洲)
+* year      ：统计年份；每隔5年统计一次；连续型变量；整数型；也可以作为转为日期(每个年份加上1月1日即可)
+* lifeExp   ：人均寿命；连续型变量；数值型；单位是`年`
+* pop       ：人口数；连续型变量；数值型
+* gdpPercap ：人均GDP；连续型变量；数值型；单位是`美元`
+
+```{r}
+library(gapminder) # 如果没有这个包则直接 install.packages("gapminder")
+data(gapminder)    # 载入数据集，实际上没什么用，在 library(gapminder) 时候已经载入了 :)
+View(gapminder)    # 在数据面板中查看数据集
+str(gapminder)     # 查看数据结构
+help(gapminder)    # 查看数据集说明
+```
+
+
+## 探索人均寿命在过去55年的变化情况
+
+```{r}
+library(dplyr)    # 数据处理的语法 data.frame
+library(ggplot2)  # 图层的语法
+```
+
+
+### 回顾
+
+#### 散点图
+
+在每个年份上都有很多个点的人均寿命值，某个点都代表一个国家/地区。
+
+从该图中可以可以看出总图上人均寿命有在增长，但该图不能体现具体每个国家/地区的变化情况。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp)) +
+  geom_point()
+```
+
+#### 箱线图
+
+按年份分组，各个国家/地区均值(中位数)在过去55年人均寿命是增长的。在1992年还有一个国家的人均寿命异常。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = factor(year), y = lifeExp)) +   
+  geom_boxplot()
+
+# 备注
+# x = factor(year) 其中 year 是连续型变量，在横坐标上将其转化为因子才能分组展示
+# 可以尝试 x = year 看看会得到什么结果
+```
+
+箱线图的分组，通常是用在不同样本组的对象上，在这里可以使用国家/地区来分组，箱线图统计不同年份的分布。
+
+问题
+
+* 横坐标轴放不下这么多的分类变量，这种情况下应该分类变量放在纵坐标轴，需要坐标轴变换(翻转)。
+* 排序是个问题，默认是按照因子排序的，这里的因子水平是按照字母顺序的，应该使用中位数来排序。
+
+解决：等到坐标系(`Coordinate systems`)章节的时候再讲解。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = country, y = lifeExp)) +   
+  geom_boxplot()
+```
+
+
+#### 点线图
+
+按照国家/地区分组获取的人均寿命箱线图的统计意义可能存在一些问题。
+
+每个国家地区的人口数不同，平均值就应该使用`加权平均值`，人口数作为权重。
+
+将人均寿命加权平均后，虽然均值更符合统计意义，但无法体现不同国家/地区的个体差异。
+
+```{r}
+gapminder %>% 
+  group_by(year) %>% 
+  summarise(avg_lifeExp = weighted.mean(lifeExp, pop)) %>%
+  ggplot(aes(x = year, y = avg_lifeExp)) +
+  geom_point() +
+  geom_line()
+```
+
+## 分组
+
+### 线图
+
+表现随时间演化的图形通常是线图。
+
+在每个时间戳上有多个数据点时，线图会将同一个时间戳上点用线连起来，再连到下一个时间戳上。
+
+不分组是没有办法体现个体趋势的。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp)) +
+  geom_line()
+```
+
+### 颜色分组映射
+
+因为数据点最细粒度的维度是国家/地区，故而分组变量用 `country`。
+
+但是，`country`因子的水平过点，导致图例占用了图形一大半区域。
+
+索性，主要数据图形趋势图(线图)还是按照预想的变现出来了，可以看到但多数国家都是线性增长的，少部分国家/地区在某些年份出现了发常，这些应该是重点研究的对象。
+
+问题
+
+* 图例区域过大
+* 颜色过于接近，无法有效分辨具体的国家/地区
+
+主要原因都是分组变量的因子水平过多。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line()
+```
+
+移除图例。
+
+主题、图例相关的部分将在主题篇讲解。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() +
+  theme(legend.position = "none")
+
+# overploting : color overploting
+```
+
+## 按变量分组，但不标度映射
+
+### group
+
+分组不映射到颜色上，但要实现分组，在 mapping 的 aes 中使用 `group` 参数。
+
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp, group = country)) +
+  geom_line(alpha = 1/5)
+```
+
+
+### stat group
+
+如果分组只是从颜色映射分组到分组但不映射颜色，意义不大。
+
+分组的另一个用途是在统计变化做分组。
+
+添加一个线性回归的统计变化，使用默认的、相同的分组`country`。
+
+线图和线性回顾的线图叠加在一起了。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp, group = country)) +
+  geom_line() + 
+  geom_smooth(method = "lm", se = FALSE)  # se = FALSE 这里去掉显示置信区间，图形(颜色)信息已经够多了
+```
+
+直接去掉原始的线图，直接绘制回归线。
+
+该图用回归线代替了原来的按点连接起来的线，但分组表现的(研究的)还是按照最细粒度的国家/地区的信息。
+
+进一步，在原有国家/地区维度的基础上，探索其他维度的信息，需要用到 `group` 映射。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme(legend.position="none")
+```
+
+在保留原有国家/地区趋势线图的情况下，绘制总体的回归线。
+
+总体也是一种分组，但是只分一组，`group = 1`。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp, group = country)) +  
+  geom_line(alpha = 1/5) +   #连接线 overploting 了，用透明度做处理
+  geom_smooth(aes(group = 1), method = "lm")
+
+# 与如下代码等价：但属性映射在不同图层上都不相同（不需要共享）时，我倾向与将属性放在不同图层上，逻辑看起来更强
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp)) +
+  geom_line(aes(group = country), alpha = 1/5) +  # group = country 只在 geom_point() 中有效
+  geom_smooth(aes(group = 1), method = "lm")
+```
+
+研究各大洲的不同变化，则分组就使用`continent`。
+
+连线图按国家/地区的分组绘制；但线性回归直线按大洲分组。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp)) +
+  geom_line(aes(group = country), alpha = 1/5) + # 只做group而没有使用color映射，颜色就是默认的一种
+  geom_smooth(aes(group = continent, color = continent), method = "lm") # 按continent分组
+
+gapminder %>%
+  ggplot(aes(x = year, y = lifeExp)) +
+  geom_line(aes(group = country), alpha = 1/5) + # 只做group而没有使用color映射，颜色就是默认的一种
+  geom_smooth(aes(color = continent), method = "lm") # group和其他分组映射使用相同的变量映射时，不需要再单独制定group
+```
+
+### 扩展案例
+
+类似地，如果有其的维度(分组变量)也可以用类似的方法来做分析。
+
+该数据集中分组(因子)变量只有国家/地区和大洲。
+
+另外还有两个连续变量`人口数(pop)`和`人均GDP(gdpPercap)`可能会影响到`人均寿命(lifeExp)`，我们只需要将其分段的数值(离散化)即可。
+
+人均GDP(gdpPercap)似乎与人均寿命(lifeExp)更相关，我们选用此变量来分析。
+
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(alpha = 1/5)
+```
+
+
+先对人均GDP做探索分析。
+
+人均GDP在各个国家/地区、在不同时间(年代)也会有较大变化，需要考虑随时间的变化。
+
+```{r}
+gapminder %>%
+  ggplot(aes(x = year, y = gdpPercap)) +
+  geom_line(aes(group = country), alpha = 1/5)
+```
+
+
+有一个国家/地区的人均GDP比其他都高，使得数据倾斜，我们先剔除此国家/地区。
+
+找出1957年人均GDP的就是。
+
+```{r}
+gapminder %>%
+  filter(year == 1957) %>%
+  arrange(desc(gdpPercap)) %>%
+  slice(1:1)
+
+# 或者在数据面板中查看 View(gapminder)
+```
+
+结果是 `Kuwait` : 科威特（中东国家）。
+
+
+剔除 `Kuwait` 重新绘制之前的图形。
+
+```{r}
+gapminder %>%
+  filter(country != "Kuwait") %>%
+  ggplot(aes(x = year, y = gdpPercap)) +
+  geom_line(aes(group = country), alpha = 1/5)
+
+# log10 变换
+gapminder %>%
+  filter(country != "Kuwait") %>%
+  ggplot(aes(x = year, y = log10(gdpPercap))) +
+  geom_line(aes(group = country), alpha = 1/5)
+
+```
+
+
+过去55年各国的人均GDP发生了很大的变化，如果直接用历史均值不不太合理，主要是会和我们当前认知的国家/地区的发展会有偏差。
+
+建议使用最近的数据，但不要只使用一个数据点，建议使用两个时间（也就2个5年最近10年）数据的均值。
+
+注意：最近10年是数据集中的最后时间点，分别是2007年和2002年。
+
+```{r}
+gapminder %>%
+  filter(year %in% c(2007,2002)) %>%
+  group_by(country) %>%
+  summarise(avg_gdpPercap = mean(gdpPercap)) %>% 
+  ggplot(aes(avg_gdpPercap)) +
+  geom_histogram()
+```
+
+
+从直方图上可以看出，将其等分为5个区间比较合适。
+
+`ggplot2` 提供了一个将连续型数值切分转化为离散型分类变量的函数： `cut_number`。
+
+```{r}
+help(cut_number)
+
+gapminder %>%
+  filter(year %in% c(2007,2002)) %>%
+  group_by(country) %>%
+  summarise(avg_gdpPercap = mean(gdpPercap)) %>% 
+  mutate(cut_gdpPercap = cut_number(avg_gdpPercap, n = 5)) %>%
+  use_series(cut_gdpPercap) %>%
+  levels()
+```
+
+将新得到的分类变量关联到原始数据集上
+
+```{r}
+df_cut <- gapminder %>%
+  filter(year %in% c(2007,2002)) %>%
+  group_by(country) %>%
+  summarise(avg_gdpPercap = mean(gdpPercap)) %>% 
+  mutate(cut_gdpPercap = cut_number(avg_gdpPercap, n = 5))
+
+# group
+
+gapminder %>%
+  left_join(df_cut, by = "country") %>%
+  ggplot(aes(x = year, y = lifeExp)) +
+  geom_line(aes(group = country), alpha = 1/5) + 
+  geom_smooth(aes(color = cut_gdpPercap), method = "lm")
+```
+
+
+## 总结
+
+分组映射，除了颜色和形状等映射到标度的方式之外，还有一个 `group` 的映射，单纯做分组，特别实用在一幅图形中有多个分组的情况，及对总体做统计变换(group = 1)。
+
+
+
