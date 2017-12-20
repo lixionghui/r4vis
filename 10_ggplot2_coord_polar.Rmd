@@ -1,0 +1,236 @@
+---
+title: "polar coordinate system 极坐标变换"
+author: "lixionghui"
+date: "2017/12/18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 准备
+
+### ggplot2
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)  # 如果没有这个包可直接安装 install.packages("ggplot2")
+```
+
+`ggplot2` 使用手册参考官方在线文档 <http://ggplot2.tidyverse.org/> 
+
+
+### dplyr
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)    # 如果没有这个包可直接安装 install.packages("dplyr")
+```
+
+`dplyr` 在绘图前需要对数据做处理时使用，使用手册参考官方在线文档 <http://dplyr.tidyverse.org/>
+
+### forcats
+
+```{r, message=FALSE, warning=FALSE}
+library(forcats)    # 如果没有这个包可直接安装 install.packages("forcats")
+```
+
+`forcats` 在需要改变图例的顺序时时使用，使用手册参考官方在线文档 <http://forcats.tidyverse.org/>
+
+### gapminder
+
+```{r, message=FALSE, warning=FALSE}
+library(gapminder) # 如果没有这个包可直接安装 install.packages("gapminder")
+```
+
+`gapminder` 数据集非常适合作为基本数据处理和绘图分析的示例，详情参考项目主页 <https://github.com/jennybc/gapminder> 
+
+
+```{r}
+# View(gapminder)    # 在RStudio的数据面板中查看数据集
+str(gapminder)     # 查看数据结构
+help(gapminder)    # 查看数据集说明 或者查看项目主页的介绍 https://github.com/jennybc/gapminder
+```
+
+
+`gapminder` **基本介绍**：该数据集包含了 142 个国家/地区从 1952 年到 2007 年每隔 5 年的人均国内生产总值(GDP per capita)、人口(population)和预期寿命/预期寿命(life expectancy)等信息，6 个变量，1704 行记录。
+
+数据集变量说明：
+
+* country   ：国家/地区；因子类型，总共142个水平；英文描述
+
+* continent ：大洲；因子类型，总共5个水平；英文描述，分别是 Africa(非洲), Americas(美洲), Asia(亚洲), Europe(欧洲), Oceania(大洋洲)
+
+* year      ：统计年份；每隔5年统计一次；连续型变量；整数型；开始时间是1952年，最后的时间是2007年
+
+* lifeExp   ：预期寿命；连续型变量；数值型；单位是`年`
+
+* pop       ：人口数；连续型变量；数值型
+
+* gdpPercap ：人均GDP；连续型变量；数值型；单位是`国际元`：在特定时间(这里是以2005年作为基准)与美元有相同购买力的假设通货单位，通常用来比较各国人均国内生产总值
+
+
+
+
+## coord_polar 极坐标系变换
+
+
+
+用法 `p + coord_polar(theta = "x", start = 0, direction = 1)`
+
+
+参数说明
+
+* theta     ：角度（映射），默认将 ggplot(data = NULL, maping(aex(x = NULL, y = NULL))) 中 x 映射为角度，剩下的 y 就映射为 半径；如果 theta = "y"， 则剩下的 x 将是半径；这里需要注意的是角度只是一种映射(mapping)，而非输入真正的弧度值
+
+* start     ：角度的起始位置相对于时钟12点方向偏移的弧度（具体的弧度值，`pi` 是一个半圆）；默认为`0`即时钟12点位置（圆形在视觉上习惯于从此为开始）
+
+* direction ：角度的方向，默认为`1`（顺时针），可以改为 `-1`（逆时针）
+
+
+
+### 点线面的变换
+
+
+```{r}
+p <- gapminder %>%
+  filter(country == "China") %>%  # dplyr 中 filter 条件筛选
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point() +
+  geom_line(color = "green") + 
+  geom_vline(xintercept = 1000, color = "blue") +
+  geom_hline(yintercept = 60, color = "red") +
+  geom_rect(aes(xmin = 2000, xmax = 4000, ymin = 65, ymax = 75), fill = "pink", alpha = 0.1) +
+  xlim(0, NA) + 
+  ylim(0, NA)
+
+p
+  
+p + coord_polar(theta = "x")
+p + coord_polar(theta = "y")
+```
+
+
+### 饼图
+
+```{r}
+p <- gapminder %>%
+  filter(year == 2007) %>%
+  group_by(continent) %>%
+  summarise(pop = sum(as.numeric(pop))) %>%
+  ggplot(aes(x = factor(1), y = pop, fill = continent))
+
+#### 将条形图的高度 pop 也就是 纵坐标 y 映射到 theta 角度上（剩下的 x 其值都相同，自动映射成了半径 ）
+#### 单分类的堆叠条形图，经过极坐标变换之后，转换成了饼图 (Pie chart)
+
+p + geom_col()
+p + geom_col() + coord_polar(theta = "y")   # geom_col() 默认的 width = 0.9
+
+#### 中间空白圆形的解决办法
+p + geom_col(width = 1)
+p + geom_col(width = 1) + coord_polar(theta = "y") # 宽度为1，则宽度的其实位置从横坐标的0开始
+
+
+#### 中间留白更多，变换后变成了环形图 (Doughnut chart)
+p + geom_col(width = 0.5)
+p + geom_col(width = 0.5) + coord_polar(theta = "y") # 宽度为0.5，则宽度的起始位置距离横坐标的原点留有半个宽度的空白
+```
+
+上面图形的几个问题
+
+* 坐标轴显示：变换之后，依然是按照直角坐标系来方式呈现的，标题、背景、刻度都可以去掉（在后续章节再讲）
+* 饼图(扇形)的占比标签说明，需要先计算好值将其标注出来（在后续标注章节再将）
+
+
+### 靶心图 
+
+```{r}
+#### 将条形图的宽度 factor(1) 也就是 横坐标 x 映射到 theta 角度上，其值（弧度）都相同
+#### 剩下的 y 其值 pop 自动映射成了半径
+
+#### 堆叠条形图极坐标系变化之后变成了饼图 (Pie chart)
+p + geom_col()
+p + geom_col() + coord_polar(theta = "x")   # geom_col() 默认的 width = 0.9
+
+#### 角度不留白，就变成了靶心图
+p + geom_col(width = 1)
+p + geom_col(width = 1) + coord_polar(theta = "x") # 宽度为1，则宽度的其实位置从横坐标的0开始
+
+
+#### 中间空白更多，变换后变成了环形图 (Doughnut chart)
+p + geom_col(width = 0.5)
+p + geom_col(width = 0.5) + coord_polar(theta = "x") # 宽度为0.5，则宽度的起始位置距离横坐标的原点留有半个宽度的空白
+
+
+#### 中间空白更多 + 更多，变换后成了为扇形，通过 start 起始位置来调整扇形的方向
+p + geom_col(width = 0.2)
+p + geom_col(width = 0.2) + coord_polar(theta = "x", start = pi) # 宽度为0.5，则宽度的起始位置距离横坐标的原点留有半个宽度的空白
+
+```
+
+
+
+### 南丁格尔玫瑰图
+
+并列的条形图 + 极坐标变换
+
+```{r}
+p <- gapminder %>%
+  filter(year == 2007) %>%
+  group_by(continent) %>%
+  summarise(pop = sum(as.numeric(gdpPercap))) %>% 
+  mutate(continent = forcats::fct_reorder(continent, pop)) %>%            # 将 continent 因子按照 pop 从小到大排序
+  # mutate(continent = forcats::fct_reorder(continent, pop, .desc = TRUE)) %>%  # .desc = TRUE 从大到小排列
+  ggplot(aes(x = continent, y = pop, fill = continent))        
+
+
+p + geom_col(width = 0.9)
+p + geom_col(width = 0.9) + coord_polar(theta = "x")
+
+p + geom_col(width = 1)
+p + geom_col(width = 1) + coord_polar(theta = "x")  
+# continent 映射到 x , 而 x 变换到 theta (角度)
+# continent 是因子，每个水平的分派的弧度相同
+# 剩下映射到 y 的 pop 变量，自动变换到极坐标轴的半径上，故而扇形的大小是由半径 pop 来决定的
+
+
+
+
+
+p + geom_col(width = 0.9) + coord_polar(theta = "y")
+
+p + geom_col(width = 1) + coord_polar(theta = "y") 
+# pop 映射到 y , 而 y 变换到 theta (角度)
+# pop 是数值，故而其中最大值映射成一个2*pi（一个整圆形），其他值按比例比例映射成 < 2*pi 的弧度值
+# 剩下映射到 x 的 continent 变量，自动变换到极坐标轴的半径上，因为是因子，故而每个分类的半径（长度）是相同的。
+
+```
+
+
+
+### 矩形变换
+
+```{r}
+p <- ggplot() +
+  geom_rect(aes(xmin = 18.5, xmax = 31.5, ymin = 0,  ymax = 100), fill = "pink") +
+  geom_rect(aes(xmin = 50,   xmax = 100,  ymin = 25, ymax = 50 ), fill = "skyblue") +
+  xlim(0, 100) + 
+  ylim(0, 100)
+ 
+p
+
+p + coord_polar(theta = "x")
+p + coord_polar(theta = "y")
+```
+
+### 回顾
+
+* coord_polar() 是直角坐标系在做了变换, 可以指定其中一个坐标轴映射到 theta（角度），剩下的坐标轴就自动映射为半径
+* 极坐标变换主要用在将图形图转化为环形图，图形图的宽度 width 参数会影响到最终图形
+
+
+
+### 作品赏析
+
+https://github.com/halhen/viz-pub/tree/master/sports-season
+
+https://github.com/halhen/viz-pub/tree/master/er-knife
