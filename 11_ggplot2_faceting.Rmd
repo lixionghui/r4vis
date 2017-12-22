@@ -1,0 +1,291 @@
+---
+title: "Faceting 分面"
+author: "lixionghui"
+date: "2017/12/19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+
+### ggplot2
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)  # 如果没有这个包可直接安装 install.packages("ggplot2")
+```
+
+`ggplot2` 使用手册参考官方在线文档 <http://ggplot2.tidyverse.org/> 
+
+
+### dplyr
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)    # 如果没有这个包可直接安装 install.packages("dplyr")
+```
+
+`dplyr` 在绘图前需要对数据做处理时使用，使用手册参考官方在线文档 <http://dplyr.tidyverse.org/>
+
+### forcats
+
+```{r, message=FALSE, warning=FALSE}
+library(forcats)    # 如果没有这个包可直接安装 install.packages("forcats")
+```
+
+`forcats` 在需要改变图例的顺序时时使用，使用手册参考官方在线文档 <http://forcats.tidyverse.org/>
+
+### gapminder
+
+```{r, message=FALSE, warning=FALSE}
+library(gapminder) # 如果没有这个包可直接安装 install.packages("gapminder")
+```
+
+`gapminder` 数据集非常适合作为基本数据处理和绘图分析的示例，详情参考项目主页 <https://github.com/jennybc/gapminder> 
+
+
+```{r}
+# View(gapminder)    # 在RStudio的数据面板中查看数据集
+str(gapminder)     # 查看数据结构
+help(gapminder)    # 查看数据集说明 或者查看项目主页的介绍 https://github.com/jennybc/gapminder
+```
+
+
+`gapminder` **基本介绍**：该数据集包含了 142 个国家/地区从 1952 年到 2007 年每隔 5 年的人均国内生产总值(GDP per capita)、人口(population)和预期寿命/预期寿命(life expectancy)等信息，6 个变量，1704 行记录。
+
+数据集变量说明：
+
+* country   ：国家/地区；因子类型，总共142个水平；英文描述
+
+* continent ：大洲；因子类型，总共5个水平；英文描述，分别是 Africa(非洲), Americas(美洲), Asia(亚洲), Europe(欧洲), Oceania(大洋洲)
+
+* year      ：统计年份；每隔5年统计一次；连续型变量；整数型；开始时间是1952年，最后的时间是2007年
+
+* lifeExp   ：预期寿命；连续型变量；数值型；单位是`年`
+
+* pop       ：人口数；连续型变量；数值型
+
+* gdpPercap ：人均GDP；连续型变量；数值型；单位是`国际元`：在特定时间(这里是以2005年作为基准)与美元有相同购买力的假设通货单位，通常用来比较各国人均国内生产总值
+
+### 其他数据集
+
+
+```{r}
+library(nycflights13) 
+library(reshape2)
+```
+
+
+## Faceting 分面
+
+分面，是将数据拆分为子集，将原图形拆分为相同结构的子图排列在面板上。
+
+
+
+分面有两种方式
+
+* `facet_wrap()`：按一个分类变量将图形按类别数量按顺序排列在二维布局上，可以指定一行有几个子图，或者一列有几个子图。
+
+* `facet_grid()`：按两个分类变量将图拆分为行列矩阵布局。
+
+
+主要参数用法
+
+* facets 是分面变量。 facet_wrap() 中是单个分类变量，用公式来表示 `~ variable` ；在 facet_grid()` 中是双变量，用  `variable1~ variable2` 来表示。
+
+* nrow, ncol 是指定一行或者一列有几个子图，两者互斥，只能有一个，如果没有指定，则默认是 n*m 个子图，最接近子图数，行列数也是最接近。只对 facet_wrap() 生效。
+
+* scales 子图标度是否相同，默认为 "fixed"" 相同；可以为 "free"，则 x 和 y 各自子图中自适应，也可以指定 "free_x"" 或者 "free_y""
+
+### facet_wrap
+
+```{r}
+p <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(alpha = (1/3))
+
+p 
+
+# View(gapminder)
+  
+p + facet_wrap(~ continent)  # 按照 continent 将数据拆分为子集，将图形拆分为子图
+
+# facets 是 continent，也就是将数据按照 continent 做了拆分(分组)，分别绘制相同的散点图
+# 每个数据面板都有一个标题，就是分类变量 continent 的水平，其排序是根据因子顺序来排列的
+# nrow 和 ncol 都没有指定，总分类数是5，则自动生成 2 * 3 布局矩阵，最后一个子图是空的
+# scales = "fixed" 默认，故而每个子图的 x 和 y 标度都相同，横纵坐标的其实和结束都相同
+
+```
+
+
+
+
+参数上做一些改变后效果
+
+```{r}
+p <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(alpha = (1/3))
+
+p 
+
+p + facet_wrap(~ continent)  
+
+p + facet_wrap(~ forcats::fct_reorder(continent, gdpPercap, .desc = TRUE))  # 将 continent 因子重排序，改变数据面板顺序
+
+p + facet_wrap(~ continent, nrow = 1)  # nrow = 1 ，将子图都排成一行
+p + facet_wrap(~ continent, ncol = 1)  # ncol = 1 ，将子图都排成一列
+
+p + facet_wrap(~ continent, scales = "fixed")      # 标度不一样的子图放在一起比较可能是不合适的，需要谨慎
+
+p + facet_wrap(~ continent, scales = "free")      # 标度不一样的子图放在一起比较可能是不合适的，需要谨慎
+
+p + facet_wrap(~ continent, scales = "free_x")    # 标度不一样的子图放在一起比较可能是不合适的，需要谨慎
+
+p + facet_wrap(~ continent, scales = "free_y")    # 标度不一样的子图放在一起比较可能是不合适的，需要谨慎
+
+```
+
+
+
+天气数据集
+
+```{r}
+
+library(nycflights13) # weather 数据集 Hourly meterological data for LGA, JFK and EWR
+data("weather", package = "nycflights13")
+
+ggplot(data = weather, aes(x = temp)) +
+  geom_histogram(binwidth = 5, color = "white")
+
+ggplot(data = weather, aes(x = temp)) +
+  geom_histogram(binwidth = 5, color = "white") +
+  facet_wrap(~ month, nrow = 4)
+```
+
+
+### facet_grid
+
+小费数据集
+
+```{r}
+library(reshape2)
+data("tips", package = "reshape2")
+help(tips)
+head(tips)
+str(tips)
+# View(tips)
+```
+
+交叉双变量
+
+```{r}
+
+p <- ggplot(tips, aes(x=total_bill, y=tip/total_bill))+
+  geom_point(shape = 1)
+
+p
+
+p + facet_grid(sex ~ day)
+
+p + facet_grid(day ~ sex)
+
+p + facet_grid(sex ~ forcats::fct_relevel(day, "Thur")) # 将 day 重新排序，将 Thur 顺序移动到最前面
+
+```
+
+
+facet_grid() 中的 facets 参数支持两个变量，也可以指使用一个变量。`variable1 ~ variable2` 前面的变量是垂直展示，后面的变量是水平展示，只要一个变量的话，另一个变量用 "." 替代。
+
+```{r}
+p <- ggplot(tips, aes(x=total_bill, y=tip/total_bill))+
+  geom_point(shape = 1)
+
+p
+
+p + facet_grid(sex ~ .)
+
+p + facet_grid(. ~ sex)
+
+p + facet_wrap(~ sex, nrow = 1)  # 与 facet_grid(. ~ sex) 等价
+
+```
+
+
+交叉双变量如果没有交叉的数据集，则使用 facet_grid 意义不大。
+
+```{r}
+p <- gapminder %>%
+  filter(country %in% c("China", "India", "Iraq", "Australia", "New Zealand")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp, color = country)) + 
+  geom_point(alpha = (1/3))
+
+p 
+  
+p + facet_grid(continent ~ country)  # continent 与 country 交叉没有子集，空的数据面板没有对比的意义
+
+p + facet_grid(. ~ country) # 垂直拆分，共用 y 轴
+p + facet_grid(country ~ .) # 水平拆分，共用 x 轴
+p + facet_wrap(~ country)   # 单纯拆分为子图
+```
+
+
+使用 facting 拆分为子图时，子图的数量应该是有限的，可以比较的，否则子图太多会比较乱。
+
+```{r}
+p <- gapminder %>%
+  filter(continent == "Asia") %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(alpha = (1/3))
+
+p + facet_wrap(~ country)   # 限制 continent == "Asia" 还是有30多个子图，在显示设备较小的情况下，很难做比较，更别提所有国家地区了
+
+# 更多在子图就应该使用分组统计（建模）后的结果再来可视化
+
+```
+
+子图也是数据和图形的分组，单就数据分组可以使用 group 的方式来实现，在同一个图形中表现不同的数据。在有必要的时候将其拆分为有限子图做比较。
+
+```{r}
+p <- gapminder %>%
+  filter(continent != "Oceania") %>%                          # Oceania 只有两个国家，这里过滤掉
+  ggplot(aes(x = year, y = lifeExp, group = country)) + 
+  geom_line(show.legend = FALSE, alpha = 0.5)
+
+p
+
+p + facet_wrap(~ continent) # 按大洲来分组也能比较出各大洲的不同变化情况
+
+```
+
+### 一页多图
+
+faceting 是拆分数据为子集使用相同的规则来作图拆分为多个子图。
+
+如果将不同的图形合并展示在一个大图上，是图形的布局问题，与 faceting 无关。
+
+```{r}
+library(gridExtra) # 一页多图的一种方式（还有其他方法）
+
+# First plot
+p1 <- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(alpha = (1/3))
+
+# Second plot
+p2 <- ggplot(data = weather, aes(x = temp)) +
+  geom_histogram(binwidth = 5, color = "white")
+
+# Third plot
+p3 <- ggplot(tips, aes(x=total_bill, y=tip/total_bill)) +
+  geom_point(shape = 1) 
+
+# Forth plot
+p4 <- p3 + facet_grid(sex ~ .)
+
+grid.arrange(p1, p2, p3, p4)
+
+grid.arrange(p1, p2, p3, p4, ncol=2, nrow=2, widths=c(4,1), heights=c(1,4)) # 可以调整子图布局的高宽
+
+```
+
+
+
