@@ -1,0 +1,502 @@
+---
+title: "Position Scales 位置标度"
+author: "lixionghui"
+date: "2017/12/27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+
+### ggplot2
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)  # 如果没有这个包可直接安装 install.packages("ggplot2")
+```
+
+`ggplot2` 使用手册参考官方在线文档 <http://ggplot2.tidyverse.org/> 
+
+
+### dplyr
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)    # 如果没有这个包可直接安装 install.packages("dplyr")
+```
+
+`dplyr` 在绘图前需要对数据做处理时使用，使用手册参考官方在线文档 <http://dplyr.tidyverse.org/>
+
+### forcats
+
+```{r, message=FALSE, warning=FALSE}
+library(forcats)    # 如果没有这个包可直接安装 install.packages("forcats")
+```
+
+`forcats` 在需要改变图例的顺序时时使用，使用手册参考官方在线文档 <http://forcats.tidyverse.org/>
+
+### gapminder
+
+```{r, message=FALSE, warning=FALSE}
+library(gapminder) # 如果没有这个包可直接安装 install.packages("gapminder")
+```
+
+`gapminder` 数据集非常适合作为基本数据处理和绘图分析的示例，详情参考项目主页 <https://github.com/jennybc/gapminder> 
+
+
+```{r}
+# View(gapminder)    # 在RStudio的数据面板中查看数据集
+str(gapminder)     # 查看数据结构
+help(gapminder)    # 查看数据集说明 或者查看项目主页的介绍 https://github.com/jennybc/gapminder
+```
+
+
+`gapminder` **基本介绍**：该数据集包含了 142 个国家/地区从 1952 年到 2007 年每隔 5 年的人均国内生产总值(GDP per capita)、人口(population)和预期寿命/预期寿命(life expectancy)等信息，6 个变量，1704 行记录。
+
+数据集变量说明：
+
+* country   ：国家/地区；因子类型，总共142个水平；英文描述
+
+* continent ：大洲；因子类型，总共5个水平；英文描述，分别是 Africa(非洲), Americas(美洲), Asia(亚洲), Europe(欧洲), Oceania(大洋洲)
+
+* year      ：统计年份；每隔5年统计一次；连续型变量；整数型；开始时间是1952年，最后的时间是2007年
+
+* lifeExp   ：预期寿命；连续型变量；数值型；单位是`年`
+
+* pop       ：人口数；连续型变量；数值型
+
+* gdpPercap ：人均GDP；连续型变量；数值型；单位是`国际元`：在特定时间(这里是以2005年作为基准)与美元有相同购买力的假设通货单位，通常用来比较各国人均国内生产总值
+
+### 其他数据集
+
+
+```{r}
+library(nycflights13) 
+library(reshape2)
+```
+
+### RColorBrewer
+
+```{r}
+library(RColorBrewer)
+```
+
+
+## 标度简介 Scale introducation
+
+标度控制着数据到图形属性的映射。
+
+每一种标度都是从数据空间的某个区域（标度的定义域）到图形属性空间的某个区域（标度的值域）的一个函数。 
+
+每种标度的定义域都对应着提供给这个标度的取值范围，此定义域可以是连续型或者是离散型、有序型或者无序型。
+
+而标度的值域则包含了我们可以感知的、R能够理解的、实实在在的图形属性：位置、颜色、形状、大小和线条类型。
+
+
+**标度转换**
+
+把数据单位(升, 英里/加仑等)转换成可识别物理单位(像素, 颜色)的过程称为标度转换(scaling)。
+
+标度转换后的数据对于电脑是可识别的, 比如颜色用十六进制表示(#FF6C91), 大小, 形状分别用数字和整数来表示。
+
+
+**标度特性**
+
+没有标度，就没有将数据转化为图形属性的途径，所以，图形中使用的每一个图形属性都需要一个标度。（在图形上所用到的每一个图形属性都对应着一个标度）。
+
+每个标度都作用于图形中的所有数据，以确保从数据到图形属性映射的一致性。
+
+
+当然，如果我们每次使用一个新的图形属性时都去手动添加一个标度，又难免枯燥乏味，所以当有需要时，ggplot2 将自动添加一个默认的标度。（每一种图形属性都有一个默认的标度，当我们每一次使用这个图形属性时都会自动 
+添加到图形中。）（每一种图形属性都拥有一个默认的标度，此标度将在我们每次使用这个图形属性时被自动添加到图形中。）
+
+
+**标度分类**
+
+下表是按图形属性和变量类型排列的各种标度。默认标度以粗体显示。默认的标度根据标量是连续型或者是离散型而有所不同。形状(shape)和线条类型(line type)没有默认的连续型标度，大小(size)和透明度(alpha-transparency)没有默认的离散型标度。
+
+|图形属性|离散型|连续型|
+|:--|:--|:--|
+|颜色 (colour) 和填充色 (fill) |brewer||
+||grey||
+|||**gradient**|
+|||gradient2|
+|||gradientn|
+||**hue**||
+||identity||
+||manual||
+|位置 (position) (x,y) |**discete**|**continuous**|
+|||log10|
+|||reverse|
+|||sqrt|
+|日期 (date) (x,y) ||**date**|
+|日期时间 (datetime) (x,y) ||**datetime**|
+|时间 (time) (x,y)||**time**|
+|形状 (shape) |**shape**||
+||identity||
+||manual||
+|线条类型 (line type) |**linetype**||
+||identity||
+||manual||
+|大小 (size) |identity||
+|||**size**|
+||manual||
+|透明度 (transparency) (alpha)||**alpha**|
+||identity||
+||manual||
+
+
+标度函数的名称以 `scale_` 开头，接下来是图形属性的名称（例如 colour_ 、shape_ 或 x_ ），最后以标度的名称结尾（例如， gradient 、hue 或 manual），例如 `scale_x_continuous()` 、`scale_fill_brewer()`。
+
+**引导元素**
+
+标度的另一个重要角色，是生成一个允许读图者从图形属性空间到数据空间进行反向映射的引导元素(guide)，并从图中读取出值。
+
+对于位置型图形属性来说，引导元素是坐标轴。
+
+对于其他图形属性来说，引导元素是图例。
+
+引导元素的外观皆与由标度的参数控制。
+
+https://book.2cto.com/201408/45552.html
+https://www.cnblogs.com/wkslearner/p/5656597.html
+
+
+## 位置标度
+
+
+每幅图都一定拥有两个位置标度，水平位置和竖直位置。ggplot2提供了连续型、离散型以及日期型标度。
+
+日期和时间
+
+日期和时间值基本上属于连续型，但在标注坐标轴时有着特殊的处理方式。目前我们仅支持属于date类的日期值和属于POSIXct类的时间值。如果你的日期和时间值是其他格式的，则需要as.Date()或as.POSIXct()对其进行转换。
+
+有三个参数可以控制坐标轴外观和刻度的位置：major、minor、以及format。 
+
+参数major和minor用以按照时间的单位，即年月周日时分秒来指定主要和次要断点的位置，并且允许以这些单位的倍数出现，比如，major="2weeks"将在每隔两周的位置放置一个主刻度。如果未指定，日期刻度可以自动选出合适的默认值。
+参数format指定了刻度标签的格式
+
+
+## 通用属性
+
+以连续型位置标度 `scale_x_continuous()` 和 `scale_y_continuous()` 为例讲解通用属性。
+
+### name 标度名称
+
+`name` 属性是显示在图形上的标度名称。
+
+对位置坐标来说，`name` 就是坐标轴名称。
+
+```{r}
+p <- gapminder %>%
+  # filter(country %in% c("China")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+
+p # 默认的标度名称，使用属性映射变量名称
+
+p + 
+  scale_x_continuous(name = "gdpPercap (GDP per capita (US$, inflation-adjusted))") + # 修改横坐标名称
+  scale_y_continuous(name = "lifeExp (life expectancy at birth, in years)")           # 修改纵坐标名称
+```
+
+自定义因为位置标度名称操作较为频繁，故而系统中内置了快捷函数 `xlab()` 和 `ylab()`。
+
+```{r}
+p + 
+  xlab("GDP per capita") +
+  ylab("Life Expectancy")
+```
+
+进一步地， `labs()` 快捷函数可以一次性指定多个属性名称，由 `映射属性 = "名称值"` 的列表构成。
+
+```{r}
+p + labs(x = "Year", y = "Life Expectancy")
+```
+
+快捷函数`labs()`对其他标度的名称属性也是适用的。
+
+```{r}
+p <- gapminder %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico", "Rwanda")) %>%
+  ggplot(aes(x = year, y = lifeExp, colour = country)) + 
+  geom_point() +
+  geom_line()
+
+p
+
+p + labs(x = "Year", y = "Life Expectancy", colour = "Countries")
+```
+
+### limits 定义域
+
+参数 `limits` 可以用于固定标度定义域，即指定数据显示范围。
+
+连续型标度接受一个长度为 2 的数值型向量；离散型标度接受一个字符型向量。
+
+一旦设定 `limits`，数据将不再进行任何训练。
+
+`limits` 影响的是图形上显示的元素。 
+
+限制定义域可以帮助我们移除不想在图形上展示的数据，任何不在此范围内的数据将会被丢弃。
+
+
+连续型位置标度示例
+
+
+```{r}
+p <- gapminder %>%
+  # filter(country %in% c("China")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+
+p # 默认的标度定义域不做限制（与最大最小值相关）
+
+p + scale_x_continuous(limits=c(0,60000)) # 有数据在定义域范围之外时会得到告警信息（在绘图时被丢弃）
+
+p + scale_y_continuous(limits=c(NA, 100)) # 连续型标度起或止如果不指定（自定适应）则用 NA 代替
+p + scale_y_continuous(limits=c(0, 100))
+```
+
+
+与名称属性类似，标度的定义域也有快捷函数 `xlim()` 和  `ylim()` ，其参数是包含起止定义域长度为2的向量。
+
+
+```{r}
+p # 默认的标度定义域不做限制（与最大最小值相关）
+
+p + xlim(0,60000) # 有数据在定义域范围之外时会得到告警信息（在绘图时被丢弃）
+
+p + ylim(NA, 100) # 连续型标度起或止如果不指定（自定适应）则用 NA 代替
+p + ylim(0, 100)  # 
+```
+
+`lims()` 也可以通过标度名称-标度定义域的列表方式来同时指定。
+
+```{r}
+p # 默认的标度定义域不做限制（与最大最小值相关）
+
+p + lims(x = c(0,60000), y = c(NA, 100)) # 有数据在定义域范围之外时会得到告警信息（在绘图时被丢弃）
+```
+
+
+连续型位置标度，如果 limits 定义域的第一个值比第二个值大，则坐标轴会反转。
+
+```{r, warning=FALSE}
+p + xlim(0,60000)
+p + xlim(60000,0)
+```
+
+#### 限制定义域与局部放大的区别
+
+`scale_x_continuous()` / `scale_y_continuous()` 中的参数 `limits` ，及 快捷函数 `xlim()` / `ylim()` / `lims(x, y)` 是用来限制位置标度也就是坐标轴的*定义域*（范围），在此之外的数据点会被丢弃，相当于对数据集(data)做了一次过滤(filter)。
+
+`coord_cartesian()` 中的 参数 `xlim` 和 `ylim` 是用来限制坐标轴的*显示*范围。
+
+在不进行统计计算的图层中，两者结果一致。
+
+```{r, warning=FALSE}
+p <- gapminder %>%
+  # filter(country %in% c("China")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+
+p
+
+# 在不进行统计计算的图层中，两者结果一致
+p + scale_x_continuous(limits = c(0, 60000))
+p + coord_cartesian(xlim = c(0, 60000))       
+```
+
+但也可能有不一致的情况。
+
+```{r, warning=FALSE}
+p <- gapminder %>%
+  filter(country %in% c("China")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+
+p
+
+p + scale_x_continuous(limits = c(1000, 5000))
+
+p + coord_cartesian(xlim = c(1000, 5000))       # 在图形中还多显示了一个点，因为默认 expand = TRUE 为了美观，会扩展显示两侧适当区域，这也说明了 coord_cartesian 只是单纯的区域放大
+
+
+# 都不做侧边扩展时两者显示结果一致
+p + scale_x_continuous(limits = c(1000, 5000)) + coord_cartesian(expand = FALSE) 
+p + coord_cartesian(xlim = c(1000, 5000), expand = FALSE) 
+```
+
+
+在进行统计计算的图层中，两者就会显示出本质上的区别来。
+
+
+```{r, warning=FALSE}
+p <- gapminder %>%
+  filter(country %in% c("Hong Kong, China")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+
+p + geom_smooth(method = "lm") + ylim(60, 90)
+
+# 先做图后对原图局部放大
+p + coord_cartesian(xlim = c(10000, 40000)) + geom_smooth(method = "lm") + ylim(60, 90)
+
+# 在限制定义域之后作图
+p + scale_x_continuous(limits = c(10000, 40000)) + geom_smooth(method = "lm") + ylim(60, 90)
+```
+
+
+
+
+
+### breaks 和 labels
+
+`breaks`和`labels`：`breaks`控制着显示在坐标轴或图例上的值。`labels`指定了应在断点处显示的标签。若设定`labels`，则必须同时指定`breaks`。
+
+`breaks` 对于连续型标度来说，借用 Excel 作图的术语就是"主刻度线"的位置，在哪些值上显示一条主刻度线，而对应的`labels`就是主刻度线线显示的名称。
+
+
+```{r}
+p <- gapminder %>%
+  filter(country %in% c("China")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+
+p
+
+
+p + scale_x_continuous(breaks = c(1000, 3000, 4000)) # 主刻度线可以不是等间隔的
+
+p + scale_x_continuous(breaks = c(1000, 3000, 4000), labels = c("1k", "3k", "4k")) # labels 要与 breaks 是成对出现的等长的向量
+
+```
+
+
+
+`labels` 可以通过标度函数生成。
+
+与 `ggplot2` 配套的一个函数包 `scales` ，专门有一些标度的辅助函数。
+
+对于连续型数值（位置）标度而言，有四种格式化标签函数
+
+* comma ： 千分位符
+* percent：百分比
+* dollar：美元符号
+* scientific：科学计数法
+
+```{r}
+p + scale_x_continuous(breaks = c(1000, 3000, 4000), labels = scales::comma) # 这里的 comma() 函数，其输入的变量是 breaks
+
+# 故而 labels 值是对 breaks 应用 comma 函数等到的结果
+library(scales)
+comma(c(1000, 3000, 4000))
+```
+
+
+labels 中可以指定函数，其输入的变量就是 breaks，故而在这种情况下，breaks 可以不指定。
+
+```{r}
+p + scale_x_continuous(breaks = c(1000, 3000, 4000), labels = scales::comma) # 这里的 comma() 函数，其输入的变量是 breaks
+
+p + scale_x_continuous(labels = scales::comma) # 虽不直接指定 breaks，但 break 总是有默认值的，是有输入的
+
+p + scale_x_continuous(labels = scales::dollar) # 美元符号
+
+p + scale_x_continuous(labels = scales::scientific) # 科学计数法
+
+```
+
+
+比例型的数据本质是数值型，是按照数值型存储的，但是在图形显示的时候坐标轴刻度显示为百分比是比较常用的。
+
+```{r}
+p <- gapminder %>%
+  group_by(year) %>%
+  mutate(total_pop = sum(as.numeric(pop)), percent_pop = pop / total_pop) %>%
+  filter(country %in% c("China")) %>%
+  ggplot(aes(x = year, y = percent_pop)) + 
+  geom_point()
+
+p # 原始的是数值型
+
+p + scale_y_continuous(labels = scales::percent) # 百分比
+```
+
+
+
+`breaks` 是主要刻度，而 `minor_breaks` 是次要刻度。
+
+次要刻度不会显示标签，故而没有对应的 `minor_label`。 `labels` 只与 `breaks` 有关。
+
+其他的主次刻度的参数用法是一样的。
+
+
+```{r}
+p <- gapminder %>%
+  filter(country %in% c("China")) %>%
+  ggplot(aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+
+p
+
+p + scale_x_continuous(minor_breaks = NULL) # 不显示次要刻度线是最见的用法
+
+p + scale_x_continuous(minor_breaks = c(500,4500)) # 控制显示次要标度的具体位置
+
+p + scale_x_continuous(minor_breaks = seq(1000, 5000, by = 200)) # 控制显示次要标度的具体位置
+
+p + scale_x_continuous(minor_breaks = seq(0, 60000, by = 100)) # 控制显示次要标度的具体位置
+```
+
+
+`minor_breaks` 在日期标度中会更常见，可以控制次要标度按照`自然月`的非等间距和`周`的固定周期间隔来标注，在后面会给出示例。
+
+
+
+
+
+
+## 标度变换
+
+内建的变换器列表
+
+名称|变换函数 $f(x)$|逆变换函数 $f^{-1}$|
+|:--|:--|:--|
+|asn|$tanh^{−1}(x)$|$tanh(y)$|
+|exp|$e^x$|$log(y)$|
+|identity|$x$|$y$|
+|log|$log(x)$|$e^y$|
+|log10|$log_{10}(x)$|$10^y$|
+|log2|$log_2(x)$|$2^y$|
+|logit|$log(\frac{x}{1−x})$|$\frac{1}{1+e^{(y)}}$|
+|pow10|$10^x$|$log_{10}(y)$|
+|probit|$\Phi(x)$|$\Phi^{−1}(y)$|
+|recip|$x^{−1}$|$y^{−1}$|
+|reverse|$−x$|$−y$|
+|sqrt|$x^{1/2}$|$y^2$|
+
+
+
+## 时间标度
+
+
+|编码|含义|
+|:--|:--|
+|%S|秒（00-59）|
+|%M|分钟（00-59）|
+|%l|小时，12 小时制（1-12）|
+|%I|小时，12 小时制（01-12）|
+|%H|小时，24 小时制（00-23）|
+|%a|缩写的周几（Mon-Sun）|
+|%A|全称的周几（Monday-Sunday）|
+|%e|某月中的某天（1-31）|
+|%d|某月中的某天（01-31）|
+|%m|以数值表示的月份（01-12）|
+|%b|缩写的月份（Jan-Dec）|
+|%B|全称的月份（January-December）|
+|%y|不含世纪的年份（00-99）|
+|%Y|含世纪的年份（0000-9999）|
+
