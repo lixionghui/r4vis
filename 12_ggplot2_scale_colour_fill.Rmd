@@ -1,0 +1,894 @@
+---
+title: "Colour & Fill Scales 颜色标度"
+author: "lixionghui"
+date: "2017/12/27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+
+### ggplot2
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)  # 如果没有这个包可直接安装 install.packages("ggplot2")
+```
+
+`ggplot2` 使用手册参考官方在线文档 <http://ggplot2.tidyverse.org/> 
+
+
+### dplyr
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)    # 如果没有这个包可直接安装 install.packages("dplyr")
+```
+
+`dplyr` 在绘图前需要对数据做处理时使用，使用手册参考官方在线文档 <http://dplyr.tidyverse.org/>
+
+### forcats
+
+```{r, message=FALSE, warning=FALSE}
+library(forcats)    # 如果没有这个包可直接安装 install.packages("forcats")
+```
+
+`forcats` 在需要改变图例的顺序时时使用，使用手册参考官方在线文档 <http://forcats.tidyverse.org/>
+
+### gapminder
+
+```{r, message=FALSE, warning=FALSE}
+library(gapminder) # 如果没有这个包可直接安装 install.packages("gapminder")
+```
+
+`gapminder` 数据集非常适合作为基本数据处理和绘图分析的示例，详情参考项目主页 <https://github.com/jennybc/gapminder> 
+
+
+```{r}
+# View(gapminder)    # 在RStudio的数据面板中查看数据集
+str(gapminder)     # 查看数据结构
+help(gapminder)    # 查看数据集说明 或者查看项目主页的介绍 https://github.com/jennybc/gapminder
+```
+
+
+`gapminder` **基本介绍**：该数据集包含了 142 个国家/地区从 1952 年到 2007 年每隔 5 年的人均国内生产总值(GDP per capita)、人口(population)和预期寿命/预期寿命(life expectancy)等信息，6 个变量，1704 行记录。
+
+数据集变量说明：
+
+* country   ：国家/地区；因子类型，总共142个水平；英文描述
+
+* continent ：大洲；因子类型，总共5个水平；英文描述，分别是 Africa(非洲), Americas(美洲), Asia(亚洲), Europe(欧洲), Oceania(大洋洲)
+
+* year      ：统计年份；每隔5年统计一次；连续型变量；整数型；开始时间是1952年，最后的时间是2007年
+
+* lifeExp   ：预期寿命；连续型变量；数值型；单位是`年`
+
+* pop       ：人口数；连续型变量；数值型
+
+* gdpPercap ：人均GDP；连续型变量；数值型；单位是`国际元`：在特定时间(这里是以2005年作为基准)与美元有相同购买力的假设通货单位，通常用来比较各国人均国内生产总值
+
+
+
+## 标度简介 Scale introducation
+
+标度控制着数据到图形属性的映射。
+
+每一种标度都是从数据空间的某个区域（标度的定义域）到图形属性空间的某个区域（标度的值域）的一个函数。 
+
+每种标度的定义域都对应着提供给这个标度的取值范围，此定义域可以是连续型或者是离散型、有序型或者无序型。
+
+而标度的值域则包含了我们可以感知的、R能够理解的、实实在在的图形属性：位置、颜色、形状、大小和线条类型。
+
+当有需要时，`ggplot2` 会自动添加一个默认的标度。
+
+我们确实可以在不了解标度运行原理的情况下画出许多图形，但理解标度并学会如何操纵它们则将赋予我们对图形更强的控制能力。
+
+
+**标度转换**
+
+把数据单位(升, 英里/加仑等)转换成可识别物理单位(像素, 颜色)的过程称为标度转换(scaling)。
+
+标度转换后的数据对于电脑是可识别的, 比如颜色用十六进制表示(#FF6C91), 大小, 形状分别用数字和整数来表示。
+
+
+**标度特性**
+
+没有标度，就没有将数据转化为图形属性的途径，所以，图形中使用的每一个图形属性都需要一个标度。（在图形上所用到的每一个图形属性都对应着一个标度）。
+
+每个标度都作用于图形中的所有数据，以确保从数据到图形属性映射的一致性。
+
+
+当然，如果我们每次使用一个新的图形属性时都去手动添加一个标度，又难免枯燥乏味，所以当有需要时，ggplot2 将自动添加一个默认的标度。
+
+
+
+**标度分类**
+
+每一种图形属性都拥有一个默认的标度，此标度将在我们每次使用这个图形属性时被自动添加到图形中。
+
+
+下表是按图形属性和变量类型排列的各种标度，默认标度以粗体显示。
+
+默认的标度根据标量是连续型或者是离散型而有所不同。
+
+形状(shape)和线条类型(line type)没有默认的连续型标度，大小(size)和透明度(alpha-transparency)没有默认的离散型标度。
+
+
+
+
+|图形属性|离散型|连续型|
+|:--|:--|:--|
+|颜色 (colour) 和填充色 (fill) |brewer||
+||grey||
+|||**gradient**|
+|||gradient2|
+|||gradientn|
+||**hue**||
+||identity||
+||manual||
+|位置 (position) (x,y) |**discete**|**continuous**|
+|||log10|
+|||reverse|
+|||sqrt|
+|日期 (date) (x,y) ||**date**|
+|日期时间 (datetime) (x,y) ||**datetime**|
+|时间 (time) (x,y)||**time**|
+|形状 (shape) |**shape**||
+||identity||
+||manual||
+|线条类型 (line type) |**linetype**||
+||identity||
+||manual||
+|大小 (size) |identity||
+|||**size**|
+||manual||
+|透明度 (transparency) (alpha)||**alpha**|
+||identity||
+||manual||
+
+
+标度函数的名称以 `scale_` 开头，接下来是图形属性的名称（例如 colour_ 、shape_ 或 x_ ），最后以标度的名称结尾（例如， gradient 、hue 或 manual），例如 `scale_x_continuous()` 、`scale_fill_brewer()`。
+
+**引导元素**
+
+标度的另一个重要角色，是生成一个允许读图者从图形属性空间到数据空间进行反向映射的引导元素(guide)，并从图中读取出值。
+
+对于位置型图形属性来说，引导元素是坐标轴。
+
+对于其他图形属性来说，引导元素是图例。
+
+引导元素的外观皆与由标度的参数控制。
+
+《史上最全的图表色彩运用原理》
+
+http://mp.weixin.qq.com/s?__biz=MzA3MTM3NTA5Ng==&mid=2651057818&idx=1&sn=9a3f9b342e322a1ace04a2e30fda7f16&chksm=84d9cf0db3ae461bab37faba19fd7855b45d058140add34c390a23f7a959295858631a760e9f&mpshare=1&scene=1&srcid=0330n748qIsFk4BUNrZzq9fL#rd
+
+
+## Colour Scale 颜色标度
+
+
+`colour` 和 `fill` 是两种颜色图形属性。
+
+* `colour` ：针对点、线等几何图形，他们是实心的，故而边界色和填充色都相同，也可以说没有填充色。
+* `fill`   ：针对多边形如图形图、面积图等几何图形的内部填充颜色，这些图形的边框需要边界色`colour`来指定。也就是多边形同时具有 
+
+`colour` 和 `color` 两个单词，只是英式英语和美式英语在书写上的不同，在 ggplot2 中已经做了兼容处理，两种写法等价，在图形属性和标度上都是如此。下面的示例中只书写了其中一种，但 `colour` 和 `color` 关键词可相互替换。
+
+
+颜色理论较为复杂，且不同颜色搭配设计在美观上差异很大，又涉及到设计和美学的范畴，这里都不去讲解，只关注如何使用颜色标度工具本身，并映射到指定的颜色的方法上。
+
+
+
+
+颜色标度列表如下如下（`colour` 和 `fill` 是成对出现的）：
+
+离散型
+
+* `scale_colour_hue`, `scale_fill_hue`   ： 默认离散型颜色标度，该颜色标度通过沿着 hcl 色轮选取均匀分布的色相来生成颜色。
+
+* `scale_colour_brewer`, `scale_fill_brewer` : RColorBrewer配色方案颜色标度
+
+* `scale_colour_grey`, `scale_fill_grey` ：灰度颜色标度
+
+* `scale_colour_identity`, `scale_fill_identity`：直接使用颜色映射标量的值作为标度，不做映射转化
+
+* `scale_colour_manual`, `scale_fill_manual` ：自定义颜色标度
+
+
+连续型
+
+* `scale_colour_gradient`, `scale_fill_gradient`   ：双色梯度 - 默认连续型颜色标度
+
+* `scale_colour_gradient2`, `scale_fill_gradient2` ：三色梯度
+
+* `scale_colour_gradientn`, `scale_fill_gradientn` ：自定义的n-色梯度
+
+* `scale_colour_distiller`, `scale_fill_distiller' ：RColorBrewer配色方案颜色标度
+
+### 离散型颜色标度
+
+
+#### scale_colour_hue & scale_fill_hue 默认颜色标度
+
+`scale_colour_hue()` 和 `scale_fill_hue()` 是**默认**的离散型颜色标度。
+
+```{r}
+p <- gapminder %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico", "Rwanda")) %>%
+  ggplot(aes(x = year, y = lifeExp, colour = country)) + 
+  geom_point() +
+  geom_line()
+
+p # colour 映射的变量 country 是分类变量(因子)，属于离散型，默认的颜色标度是 scale_colour_hue()
+
+P + scale_colour_hue() # 显示地添加离散型变量默认的颜色标度 scale_colour_hue()
+```
+
+`scale_colour_hue()` 通过沿着 `hcl` 色轮选取**选取均匀分布**的色相来生成颜色。
+
+`scale_colour_hue()` 是基于计算的方法，根据水平数动态计算每种颜色；但是第一个颜色是确定的，不会随着水平数变化。
+
+
+```{r}
+gapminder %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico", "Rwanda")) %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() + 
+  geom_point() +
+  scale_colour_hue() +
+  ylim(0,100)                  # 固定 y 轴刻度从 0 到 100，使得后续几幅图形更好的比较
+
+gapminder %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico")) %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() + 
+  geom_point() +
+  scale_colour_hue() +
+  ylim(0,100)
+
+gapminder %>%
+  filter(country %in% c("Cambodia", "Canada")) %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() + 
+  geom_point() +
+  scale_colour_hue() +
+  ylim(0,100)
+
+gapminder %>%
+  filter(country %in% c("Cambodia")) %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() + 
+  geom_point() +
+  scale_colour_hue() +
+  ylim(0,100)
+```
+
+`scale_colour_hue()` 使用的是`HSL`色彩模型 ，使用以下三个参数来控制颜色
+
+* h (hues) 表示色彩变化范围，变化范围为（0，360）
+
+> HSL的H(hue)分量，代表的是人眼所能感知的颜色范围，这些颜色分布在一个平面的色相环上，取值范围是0°到360°的圆心角，每个角度可以代表一种颜色。色相值的意义在于，我们可以在不改变光感的情况下，通过旋转色相环来改变颜色。在实际应用中，我们需要记住色相环上的六大主色，用作基本参照：360°/0°红、60°黄、120°绿、180°青、240°蓝、300°洋红，它们在色相环上按照60°圆心角的间隔排列。
+
+* c (chroma) 表示色彩的浓度，由数据的最大值决定
+
+> HSL的S(saturation)分量，指的是色彩的饱和度，它用0%至100%的值描述了相同色相、明度下色彩纯度的变化。数值越大，颜色中的灰色越少，颜色越鲜艳，呈现一种从理性(灰度)到感性(纯色)的变化。
+
+* l (luminance) 表示色彩的亮度，变化范围为（0，100）
+
+> HSL的L(lightness)分量，指的是色彩的明度，作用是控制色彩的明暗变化。它同样使用了0%至100%的取值范围。数值越小，色彩越暗，越接近于黑色；数值越大，色彩越亮，越接近于白色。  
+
+```{r}
+p <- gapminder %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico", "Rwanda")) %>%
+  ggplot(aes(x = year, y = lifeExp, colour = country)) + 
+  geom_point() +
+  geom_line()
+
+p + scale_colour_hue() # 默认值 h = c(0, 360) + 15, c = 100, l = 65
+
+p + scale_colour_hue(l = 40, c = 30)
+
+p + scale_colour_hue(l = 70, c = 150)
+
+p + scale_colour_hue(h = c(0, 90))      # 色相取一个范围
+```
+
+
+颜色标度中有一个通用参数 `na.value` 用来指定映射变量中出现 `NA` 值时用什么颜色显示。
+
+
+
+#### scale_colour_brewer & scale_fill_brewer
+
+`scale_colour_brewer()` 在 `ggplot2` 中集成了 `RColorBrewer` 配色方案标度。
+
+`scale_colour_brewer()` 是针对离散型变量的，而 `scale_colour_distiller()` 是针对连续性变量的。
+
+`RColorBrewer` 配色方案有一个专门的网站 [http://colorbrewer2.org/](http://colorbrewer2.org/) 可以在线预览，也可以交互查询获取具体的颜色代码。
+
+`RColorBrewer` 在 R 中还有一个专门的包 `library(RColorBrewer)`，可以方便使用该配色方案。
+
+`RColorBrewer` 提供了 3 套很好的配色方案，。
+
+这3套配色方案包括：
+
+* 连续型 (Sequential)：生成一系列连续渐变的颜色，通常用来标记连续型数值的大小。（从一个极端到另一个极端，慢慢过渡呈现顺序）
+```{r}
+RColorBrewer::display.brewer.all(type = "seq")
+```
+
+* 极端型 (Diverging)：生成用深色强调两端、浅色标示中部的系列颜色，可用来标记数据中的离群点。（两边的颜色比较亮，中间的颜色比较暗，适合凸显处在极端的数值，想进行高低对比。）
+```{r}
+RColorBrewer::display.brewer.all(type = "div")
+```
+
+* 离散型 (Qualitative)：生成一系列彼此差异比较明显的颜色，通常用来标记分类数据。（颜色对比鲜明，适合呈现分类变量，凸显他们的差异和对比。）
+```{r}
+RColorBrewer::display.brewer.all(type = "qual")
+```
+
+在 `ggplot2` 中已经集成了`RColorBrewer`配色方案的两个标度： `scale_colour_brewer()`/`scale_fill_brewer()` ，使用方法只需要修改 `type` 指定配色方案的类型即可，参数值为
+
+* "seq" : 连续型 (Sequential)，默认值
+* "div" : 极端型 (Diverging)
+* "qual": 离散型 (Qualitative)
+
+或者直接指定 `palette` 的名称即可，总共有35个可用的调色板。
+```{r}
+RColorBrewer::brewer.pal.info
+```
+
+`scale_fill_brewer()`使用示例
+
+```{r}
+p <- gapminder %>%
+  filter(year >= 2000) %>%
+  group_by(country) %>%
+  summarise(lifeExp = mean(lifeExp)) %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico")) %>%
+  ggplot(aes(x = country, y = lifeExp, fill = country)) + 
+  geom_col() +  # 用条形图-填充色便于用来比较不同配色效果
+  ylim(0,100) + 
+  theme_bw()    # 用白色背景主题便于用来比较不同配色效果
+
+p # fill = country，默认的颜色标度死 scale_fill_hue()
+
+RColorBrewer::display.brewer.all(type = "seq") # 展示 "seq" 配色方案
+
+p + scale_fill_brewer()         # type 默认值 "seq", 对应的 palette 默认值是第一个 "Blues"
+p + scale_fill_brewer(type = "seq")                       # palette 默认值是第一个 "Blues"
+p + scale_fill_brewer(type = "seq", palette = "YlOrRd")
+
+RColorBrewer::display.brewer.all(type = "div")
+p + scale_fill_brewer(type = "div")                       # palette 默认值是第一个 "BrBG"
+p + scale_fill_brewer(type = "div", palette = "Spectral") 
+
+RColorBrewer::display.brewer.all(type = "qual")
+p + scale_fill_brewer(type = "qual")                      # palette 默认值是第一个 "Accent"
+p + scale_fill_brewer(type = "qual", palette = "Set1")
+p + scale_fill_brewer(type = "qual", palette = "Set2")
+p + scale_fill_brewer(type = "qual", palette = "Set3")
+
+p + scale_fill_brewer(palette = "Dark2") # palette 用名称指定的情况下（名称是唯一的），无需指定 type
+```
+
+
+`scale_colour_brew()` 能展示调色板颜色数量是有限的（最多为8种到12种之间，不同调色板不同），如果分类数目超过颜色数量限制，则超出部分就不会被显示出来，但同时会得到一个告警信息。
+
+
+```{r}
+p <- gapminder %>%
+  filter(continent %in% c("Asia")) %>% 
+  # group_by(continent) %>% 
+  # summarise(country_num = n_distinct(country)) %>%  # country_num = 33
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() + 
+  geom_point() +
+  ylim(0,100)
+
+p # 默认颜色标度为 `scale_colour_hue()`，该标度对至多约 8 种颜色时有较好的效果，但对于更多的颜色，要区分开不同的颜色就变得比较困难了。
+
+p + scale_colour_brewer() # type 默认值 "seq", 对应的 palette 默认值是第一个 "Blues"
+	
+# n too large, allowed maximum for palette Blues is 9 Returning the palette you asked for with that many colors
+
+p + scale_colour_brewer(type = "div") # palette 默认值是第一个 "BrBG" 	
+# n too large, allowed maximum for palette BrBG is 11 Returning the palette you asked for with that many colors
+
+p + scale_colour_brewer(type = "qual")                      # palette 默认值是第一个 "Accent"
+# n too large, allowed maximum for palette Accent is 8 Returning the palette you asked for with that many colors
+
+p + scale_colour_brewer(type = "qual", palette = "Set1")
+# n too large, allowed maximum for palette Set1 is 9 Returning the palette you asked for with that many colors
+
+p + scale_colour_brewer(type = "qual", palette = "Set3")
+# n too large, allowed maximum for palette Set3 is 12 Returning the palette you asked for with that many colors
+```
+
+
+
+对于类别型数据点而言，我们最感兴趣的调色板是“Set1”和“Dark2”，对面积而言则是"Set2","Pastel1"和“Pastel2”和“Accent”。
+
+#### scale_colour_grey & scale_fill_grey
+
+灰度颜色标度，就是黑白标度。
+
+在黑白的配比值上不同就是灰色程度。
+
+灰度颜色标度有两个控制参数：
+
+* start 灰度起始位置
+* end   灰度结束位置
+
+```{r}
+p <- gapminder %>%
+  filter(year >= 2000) %>%
+  group_by(country) %>%
+  summarise(lifeExp = mean(lifeExp)) %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico")) %>%
+  ggplot(aes(x = country, y = lifeExp, fill = country)) + 
+  geom_col() +  # 用条形图-填充色便于用来比较不同配色效果
+  ylim(0,100) + 
+  theme_bw()    # 用白色背景主题便于用来比较不同配色效果
+
+p # fill = country，默认的颜色标度死 scale_fill_hue()
+
+p + scale_fill_grey()         # start = 0.2, end = 0.8，默认的灰度起始和结束值
+# 映射到颜色的分类 country 有3个水平，故而三个颜色的灰度值 gray value
+# seq(from = start, to = end, length.out = 颜色映射分类变量的水平数)
+seq(from = 0.2, to = 0.8, length.out = 3)
+
+p + scale_fill_grey(start = 0.5)  # end = 0.8，类似地，颜色灰度取值会从该范围内均匀分配
+
+```
+
+灰度颜色标度，没有颜色映射数量上的限制，因为其灰度值是根据起止范围和分类数量均匀计算的，理论上是从连续型颜色标度从计算后得到的。
+
+```{r}
+p <- gapminder %>%
+  filter(continent %in% c("Asia")) %>% 
+  # group_by(continent) %>% 
+  # summarise(country_num = n_distinct(country)) %>%  # country_num = 33
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() + 
+  geom_point() +
+  ylim(0,100)
+
+p # 默认颜色标度为 `scale_colour_hue()`，该标度对至多约 8 种颜色时有较好的效果，但对于更多的颜色，要区分开不同的颜色就变得比较困难了。
+
+p + scale_colour_grey() # type 默认值 "seq", 对应的 palette 默认值是第一个 "Blues"
+```
+
+
+灰度颜色标度的参数 `na.value` 默认为 `"red"`。
+
+其他彩色的颜色标度，默认缺失值为 "grey50"。
+
+```{r}
+gapminder %>%
+  filter(continent %in% c("Asia")) %>% 
+  filter(year == 2007) %>%
+  mutate(miss = factor(sample(c(NA, 1:5), 
+                              nrow(.),         # . 代表从前面传入的对象
+                              replace = TRUE)
+                       )
+         ) %>% # 增加一个字段，随机生成 c(1,2,3,4,5,NA) 六个值的分类因子（包含 NA）
+  ggplot(aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(colour = miss)) +      # 新字段 miss 作为分组颜色映射变量
+  scale_colour_grey(na.value = "blue")  # na.value 默认为 "red"，可以控制 NA 值的颜色
+```
+
+
+#### scale_colour_identity & scale_fill_identity
+
+`scale_*_identity` 系列的标度，实际上就是直接用映射变量的原始值作为标度的值，不需要再将变量映射为图形系统是识别的视觉元素。
+
+颜色标度可用接受 R 语言中预置的 657 颜色名称向量。
+
+颜色标度可接受 R 图形系统识别的颜色向量，有三种类型：
+
+* 预置颜色名称（字符向量）。常用的颜色名称如 `c("red", "green", "gray", "blue", "cyan", "purple", "yellow", "orange")`等，通过 `colors()` 函数可用列出所有 657 个预置颜色名称。
+
+```{r}
+colors() %>% head()    # 显示前6个
+colors() %>% length()  # 657
+```
+
+* 6位十六进制RGB颜色编码（字符向量），前面加“#”号。如红色对应的RGB值为"255 0 0",用16进制表示就是"FF0000",在R中可以用"#FF0000"表示红色。
+
+这种颜色编码虽然看起来最不直观，但在实际应用中却是最常用的，很多视觉上设计良好的颜色都没有被命名，但会给出颜色编码，可以直接使用。
+
+另外，数字化的图片在电脑上是通过像素点显示颜色的，在电脑可以方便地通过取色工具获得其对应颜色编码，也就可以得到目标图片上某个像素完全相同的颜色。
+
+* 调色板中的颜色索引（正整数向量）。R中用`palette()`表示调色板，默认有8个颜色。调色板中的颜色是可以改变的（可以创建新的调色板），包括数量和具体颜色，这时对应的正整数位置索引所代表的颜色也会改变。
+
+```{r}
+palette("default") # 调色板恢复到默认值
+palette() # 默认的调色板有 8 个颜色，第 2 个颜色是 "red"
+
+col2rgb(2)  # 从颜色转为最终系统识别的rgb矩阵
+
+#       [,1]
+# red    255
+# green    0
+# blue     0
+
+rainbow(10) # 彩虹色，获取10个颜色
+palette(rainbow(10)) # 将获得的10个彩虹色定义为当前的调色板，使其可以通过调色板的方式调用
+palette()   # 显示当前调色板的颜色，如果颜色编码与颜色名称对应的颜色相同，则显示颜色名称（名称适合人类阅读）
+
+
+col2rgb(2) # 当前调色板中第二个颜色为 "#FF9900"，rgb矩阵值已经与之前的不同了
+#       [,1]
+# red    255
+# green  153
+# blue     0
+
+col2rgb(12) # 当前调色板中的颜色只有10个，当颜色索引超过10时，类似向量重复循环的规则，第12个与第2个颜色值相同
+#       [,1]
+# red    255
+# green  153
+# blue     0
+```
+
+
+
+`scale_fill_identity()` 示例：预置颜色名称
+
+```{r}
+p <- data.frame(
+  x = 1:4,
+  y = 1:4,
+  colour = c("red", "green", "blue", "yellow")
+  ) %>%
+  ggplot(aes(x, y)) +
+  geom_tile(aes(fill = colour))
+
+p # aes(fill = colour) ，故而这里默认使用了颜色标度，为 scale_fill_hue()
+  # colour = c("red", "green", "blue", "yellow") 作为颜色分类变量，其值只是 4 个分类水平，具体的颜色由 scale_fill_hue() 标度来分配，与红绿蓝黄四个颜色没有关系，最后分配到的是青蓝色、墨绿色、洋红色、淡紫色。
+
+p + scale_fill_identity() # 不做颜色标度映射，直接使用 colour = c("red", "green", "blue", "yellow")  的值作为颜色，最后的颜色就是 红绿蓝黄。
+```
+
+当颜色名称并不在预置颜色名称中时，通过 `col2rgb()` 无法转换为 R 可识别的颜色，此时就会报错。
+
+```{r, eval=FALSE}
+data.frame(
+  x = 1:5,
+  y = 1:5,
+  colour = c("red", "green", "blue", "yellow", "ggplot2")
+  ) %>%
+  ggplot(aes(x, y)) +
+  geom_tile(aes(fill = colour)) +
+  scale_fill_identity()
+
+# Error in grDevices::col2rgb(colour, TRUE) : invalid color name 'ggplot2'
+```
+
+
+`scale_fill_identity()` 示例：十六进制RGB颜色编码
+
+```{r}
+data.frame(
+  x = 1:4,
+  y = 1:4,
+  colour = c("#FF9900", "#CCFF00", "#33FF00", "#FF0099")
+  ) %>%
+  ggplot(aes(x, y)) +
+  geom_tile(aes(fill = colour)) +
+  scale_fill_identity()
+```
+
+`scale_fill_identity()` 示例：调色板中的颜色索引
+
+```{r}
+palette("default") # 调色板恢复到默认值
+palette() # 默认的调色板有 8 个颜色，前5个颜色分别是 "black"   "red"     "green3"  "blue"    "cyan" 
+
+data.frame(
+  x = 1:4,
+  y = 1:4,
+  colour = c(1,2,3,4)
+  ) %>%
+  ggplot(aes(x, y)) +
+  geom_tile(aes(fill = colour)) +
+  scale_fill_identity()
+
+data.frame(
+  x = 1:4,
+  y = 1:4,
+  colour = c(1,2,3,5)  # 将第4个改为第5个
+  ) %>%
+  ggplot(aes(x, y)) +
+  geom_tile(aes(fill = colour)) +
+  scale_fill_identity()
+
+
+
+palette(heat.colors(4)) # 将获得的4个热力图颜色定义为当前的调色板
+
+data.frame(
+  x = 1:4,
+  y = 1:4,
+  colour = c(1,2,3,4) # 当前调色板改为热力图颜色之后，使用调色板的颜色索引得到的颜色也会相应改变
+  ) %>%
+  ggplot(aes(x, y)) +
+  geom_tile(aes(fill = colour)) +
+  scale_fill_identity()
+```
+
+
+#### scale_colour_manual & scale_fill_manual
+
+`scale_colour_manual()` 就是通过自定义（手动）指定颜色标度：将颜色映射变量的值，对应到自定义指定的颜色上。
+
+`scale_*_manual()`标度，针对的是离散型变量，也就是在变量映射到颜色属性上时，该变量是分类变量，会自动转化为因子，其水平就是类别的名称，并按顺序排列。
+
+`scale_colour_manual()`标度的用法中主要的参数是`values`，作为对应着映射分类因子的颜色值向量，其具体的颜色值还是与 `scale_colour_manual()` 一样的三类：
+
+* 预置颜色名称（字符向量）
+
+* 6位十六进制RGB颜色编码（字符向量），前面加“#”号
+
+* 调色板中的颜色索引（正整数向量）
+
+该 `values` 向量，如果没有名称属性，则按颜色属性顺序与分类因子水平顺序对应；如果有名称属性，则按颜色属性名称与分类因子水平（名称）对应。
+
+
+```{r}
+library(magrittr)
+
+p <- gapminder %>%
+  filter(country %in% c("Canada", "Rwanda", "Mexico")) %T>%
+  {.$country %>%       # . 是 magrittr 中的用法，表示左边传入的变量
+      fct_drop() %>%   # fct_drop 是 forcats 中的用法，丢弃未使用的水平
+      levels() %>%
+      print()          # 因子水平顺序是  "Canada" "Mexico" "Rwanda" 
+    } %>% 
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_point() +
+  geom_line()
+
+p + scale_colour_manual(values = c("red", "green", "blue")) # 对应分类因子水平的顺序
+
+p + scale_colour_manual(values = c("Canada" = "red", "Rwanda" = "green", "Mexico" = "blue")) # 按照名称来对应
+
+p + scale_colour_manual(values = country_colors) # 按照名称来对应 print(country_colors)
+
+p + scale_colour_manual(values = c("#FF9900", "#CCFF00", "#33FF00")) # 对应分类因子水平的顺序
+
+p + scale_colour_manual(values = c("Canada" = "#FF9900", "Rwanda" = "#CCFF00", "Mexico" = "#33FF00")) # # 按照名称来对应
+
+p + scale_colour_manual(values = heat.colors(3)) # 调色板，对应分类因子水平的顺序
+
+p + scale_colour_manual(values = RColorBrewer::brewer.pal(3, "Set1")) # 调色板，对应分类因子水平的顺序
+```
+
+
+
+#### 离散型颜色标度的比较
+
+* `scale_colour_hue`, `scale_fill_hue`   ： 默认离散型颜色标度。
+不用专门指定，只要能接收默认的颜色，就不用修改。在探索性数据分析中，绝多数多数情况下使用默认即可。对超过 8 种以上颜色时视觉上区分不明显，也不够明显。
+
+* `scale_colour_brewer`, `scale_fill_brewer` : RColorBrewer配色方案颜色标度。
+设计良好的配色方案，三大类型，总共 35 种配色方案，适应多种配色表达需求。能区分的颜色在 8 到 12 中之间。
+
+* `scale_colour_grey`, `scale_fill_grey` ：灰度颜色标度。
+黑白(灰度)配色方案。在分类过多导致彩色过度时，使用灰度来区分分类是较为合适的。类似于序列渐变，没有颜色限制，只是该标度是灰色而已，适合黑白印刷。
+
+* `scale_colour_identity`, `scale_fill_identity`：直接使用颜色映射标量的值作为标度，不做映射转化。
+基本上不会使用此标度，在数据中直接生成颜色标度值的等长向量会较为麻烦。
+
+* `scale_colour_manual`, `scale_fill_manual` ：自定义颜色标度。
+在最终表现更为美观的视觉设计时使用，属于更高级别的美学追求，但是配色是一门美学设计学问，非专业人员无法获得搭配和谐的配色方案。
+
+
+### 连续性颜色标度
+
+
+连续型
+
+根据颜色梯度中的色彩数量划分，共有三类连续型颜色梯度（即渐变色）：
+
+scale_colour_gradient() 和 scale_fill_gradient()：双色梯度。参数low和high控制梯度两端的颜色。
+scale_colour_gradient2() 和 scale_fill_gradient2():三色梯度。顺序为低-中-高，这两种标度还在中点处拥有一个中间色。
+scale_colour_gradientn()   和 scale_fill_gradientn():自定义n色梯度
+颜色梯度通常被用来展示一个二维表面的高度。下面我们将以faithful数据集的一个二维密度估计表面为例进行说明。
+
+* `scale_colour_gradient`, `scale_fill_gradient`   ：双色梯度(low-high), 从低到高指定颜色，默认连续型颜色标度
+
+* `scale_colour_gradient2`, `scale_fill_gradient2` ：极端颜色梯度(low-mid-high)，可以指定两个极端的颜色值，并且指定中间颜色
+
+* `scale_colour_gradientn`, `scale_fill_gradientn` ：自定义的多阶颜色梯度
+
+* `scale_colour_distiller`, `scale_fill_distiller' ：RColorBrewer配色方案颜色标度
+
+
+#### scale_colour_gradient & scale_fill_gradient
+
+双色梯度颜色标度，主要有两个参数，指定 low 和 hight 两个颜色，系统自动生成连续颜色。
+
+```{r}
+p <- gapminder %>%
+  filter(year == 2007) %>%
+  ggplot(aes(x = log10(gdpPercap), y = lifeExp, colour = pop)) +
+  geom_point()
+
+p # 默认连续性颜色标度为 scale_colour_gradient()
+
+p + scale_colour_gradient() # 默认的 low = "#132B43", high = "#56B1F7" 颜色
+
+p + scale_colour_gradient(low = "red", high = "green") # 从红色到绿色
+
+p + scale_colour_gradient(low = heat.colors(6)[1], high = heat.colors(6)[6]) # 热力调色板从第1个到第6个颜色
+```
+
+#### scale_colour_gradient2 & scale_fill_gradient2
+
+极端梯度颜色标度，相比双色梯度的从低(low)到高(high)，多了一个中间色(mid)，也就是颜色空间中高低两点中间必须要经过中间点。
+
+可以指定中间色的数值点(midpoint)，且这个中间数值的指定是较为重要的，不合适的值会造成较为奇怪的颜色范围。
+
+```{r}
+p + scale_colour_gradient2() # 极端梯度颜色标度
+
+p + scale_colour_gradient2(low = scales::muted("red"),      # 最小值颜色
+                           mid = "white",                   # 中间点颜色
+                           high = scales::muted("blue"),    # 最大值颜色
+                           midpoint = 0                     # 中间点颜色所在的数值
+                           ) # 极端梯度颜色标度的默认参数值
+```
+
+默认的 midpoint = 0 比较适合颜色映射字段有正负值，以零作为中间分隔颜色的情况。
+
+上面的例子，作为红色的最小值是大于中间颜色的，最终整个红色都没有显示。
+
+纯正数或纯负数的情况，midpoint 设置为最大值和最小值的平均才是比较合理的。
+
+
+
+```{r}
+library(magrittr)
+
+gapminder %>%
+  filter(year == 2007) %T>%
+  { # 中间过程获取 pop 最大最小值的中间值
+    summarise(., mid_value = (min(pop) + max(pop))/2) %>%
+      use_series(mid_value) %>%
+      assign("mid_point", ., envir = .GlobalEnv) # 结果赋值给变量 mid_point
+  } %>% 
+  ggplot(aes(x = log10(gdpPercap), y = lifeExp, colour = pop)) +
+  geom_point() +
+  scale_colour_gradient2(low = scales::muted("red"),      # 最小值颜色
+                         mid = "white",                   # 中间点颜色
+                         high = scales::muted("blue"),    # 最大值颜色
+                         midpoint =  mid_point            # 中间点颜色所在的数值，从默认的0，改为最大最小的中间值
+  ) # 极端梯度颜色标度的默认参数值
+```
+
+#### scale_colour_gradientn & scale_fill_gradientn
+
+多色梯度颜色标度，可以理解为，在颜色空间中，按照梯度规则，生成经过指定多个颜色的连续颜色标度。
+
+颜色及其顺序是通过参数 `colours` 向量来确定的。
+
+```{r}
+p <- gapminder %>%
+  filter(year == 2007) %>%
+  ggplot(aes(x = log10(gdpPercap), y = lifeExp, colour = pop)) +
+  geom_point()
+
+p + scale_colour_gradientn(colours = c("red", "blue", "green")) # 多个颜色
+
+p + scale_colour_gradientn(colours = c("red", "blue"))  # 两个也支持
+
+p + scale_colour_gradient(low = "red", high =  "blue")  # 与 scale_colour_gradient 效果相同
+
+p + scale_colour_gradientn(colours = c("red"))          # 一个也支持，但没有意义，没有渐变的效果
+
+p + scale_colour_gradientn(colours = heat.colors(6))        # 调色板是更为常见的用法：调色板配色良好
+
+p + scale_colour_gradientn(colours = terrain.colors(10))    # 调色板是更为常见的用法：调色板配色良好
+
+
+```
+
+
+#### scale_colour_distiller & scale_fill_distiller
+ 
+
+`scale_colour_distiller()` 与 `scale_colour_brewer()` 都是 `RColorBrewer` 配色方案颜色标度。
+
+`scale_colour_distiller()` 是针对连续型变量，`scale_colour_brewer()` 是针对离散型标量。
+
+`scale_colour_distiller()` 与 `scale_colour_brewer()` 用法相同，只要输入参数 `palette` 调色板名称即可。
+
+
+ `scale_colour_distiller`( `RColorBrewer` ) 三类配色方案 `type`，与 `scale_colour_gradient*` 梯度颜色标度是类似的，
+ 
+* "seq" : 连续型 (Sequential)，类似与 `scale_colour_gradient()` 双色梯度，确定起止范围(low-high)
+* "div" : 极端型 (Diverging)，类似与  `scale_colour_gradient2()` 两端颜色梯度，除了两端颜色呈现两极外中间还要一个颜色(low-mid-high)
+* "qual": 离散型 (Qualitative)，类似与 `scale_colour_gradientn` 三色颜色梯度，需要经多个不同的颜色。
+
+
+```{r}
+p <- gapminder %>%
+  filter(year == 2007) %>%
+  ggplot(aes(x = log10(gdpPercap), y = lifeExp, colour = pop)) +
+  geom_point()
+
+p + scale_colour_distiller(palette = "Blues")    # 连续型 (Sequential) 中的 Blues 调色板
+p + scale_colour_distiller(palette = "YlOrRd")   # 连续型 (Sequential) 中的 YlOrRd 调色板
+
+p + scale_colour_distiller(palette = "BrBG")     # 极端型 (Diverging) 中的 BrBG 调色板
+p + scale_colour_distiller(palette = "Spectral") # 极端型 (Diverging) 中的 BrBG 调色板
+
+p + scale_colour_distiller(palette = "Accent")   # 极端型 (Qualitative) 中的 Accent 调色板
+p + scale_colour_distiller(palette = "Set3")     # 极端型 (Qualitative) 中的 Set3 调色板
+```
+
+
+
+
+### 连续型颜色标度总结
+
+连续型颜色标度有三种类型。
+
+第一种类型：从颜色 A 到颜色 B 连续渐变配色，标度如下
+
+* `scale_colour_gradient()`/`scale_fill_gradient()` 默认标度，如需修改，美观体验取决于指定的颜色。
+
+* `scale_colour_distiller(type = "seq")`/``scale_fill_distiller(type = "seq")` 有设计良好的 18 种配色调色板可选，对默认标度不满意时推荐使用该标度，并选择一个配色方案（在多种方案中尝试）。
+
+
+第二种类型：极端渐变配色，适合数值高低两侧明显区分的情况，标度如下
+
+* `scale_colour_gradient2`, `scale_fill_gradient2` ：默认的 midpoint = 0，适合映射的颜色变量数值有正负并以零为分界的情况；其他情况下 midpoint 数值指定较为麻烦，可能要在画图前先计算好。
+
+* `scale_colour_distiller(type = "div")`/``scale_fill_distiller(type = "div")` 有设计良好的 9  种配色调色板可选，不需要指定 midpoint。
+
+第三种类型：多色渐变配色，不适合连续型颜色标度，尽量不要使用。多色适合离散型变量。
+
+* `scale_colour_gradientn`, `scale_fill_gradientn` ：自定义的多阶颜色梯度。
+
+* `scale_colour_distiller`, `scale_fill_distiller' ：RColorBrewer配色方案颜色标度。
+
+
+## 标度的通用参数
+
+对颜色标度来说，引导元素是颜色图例，故而标度的通用参数，控制着颜色图例最终的显示。
+
+关于调度的通用参数，将会在位置标度时详细讲解。
+
+
+```{r}
+# 离散型颜色标度，通常需要调整的图例只有标题
+p <- gapminder %>%
+  filter(country %in% c("Cambodia", "Canada", "Mexico", "Rwanda")) %>%
+  ggplot(aes(x = year, y = lifeExp, color = country)) +
+  geom_line() + 
+  geom_point()
+
+p + scale_colour_brewer(palette = "Dark2")
+
+p + scale_colour_brewer(palette = "Dark2", name = "Country")
+
+
+# 连续型颜色标度，除了图例的标题外，常见的调整主要是颜色分割点(breaks)和显示标签(labels)
+p <- gapminder %>%
+  filter(year == 2007) %>%
+  ggplot(aes(x = log10(gdpPercap), y = lifeExp, colour = pop)) +
+  geom_point()
+
+p + scale_colour_distiller(palette = "YlOrRd") 
+
+p + scale_colour_distiller(palette = "YlOrRd",
+                           name = "Population",   # 图例标题
+                           breaks = c(1.00e+08, 5.00e+08, 1.00e+9, 1.50e+09),
+                           labels = c("100 Million", "500 Million", "1.0 Billion", "1.5 Billion")
+                           )
+
+```
+
